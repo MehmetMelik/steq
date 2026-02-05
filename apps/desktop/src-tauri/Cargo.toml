@@ -1,6 +1,6 @@
 [package]
 name = "reqtor-desktop"
-version = "0.1.0"
+version = "0.5.0"
 description = "Reqtor - API Development Environment"
 authors = ["Reqtor Team"]
 license = "MIT"
