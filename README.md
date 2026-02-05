@@ -1,18 +1,55 @@
-# Reqtor
+<p align="center">
+  <img src="apps/desktop/src-tauri/icons/icon.png" alt="Reqtor Logo" width="128" height="128">
+</p>
 
-A desktop API development environment for building, testing, and documenting HTTP APIs. Built with [Tauri 2](https://tauri.app/), React, TypeScript, and Rust.
+<h1 align="center">Reqtor</h1>
+
+<p align="center">
+  A desktop API development environment for building, testing, and documenting HTTP APIs.
+</p>
+
+<p align="center">
+  <a href="https://github.com/MehmetMelik/reqtor/releases/latest">
+    <img src="https://img.shields.io/github/v/release/MehmetMelik/reqtor?style=flat-square&color=blue" alt="Latest Release">
+  </a>
+  <a href="https://github.com/MehmetMelik/reqtor/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/MehmetMelik/reqtor?style=flat-square" alt="License">
+  </a>
+  <a href="https://github.com/MehmetMelik/reqtor/actions/workflows/ci.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/MehmetMelik/reqtor/ci.yml?style=flat-square&label=CI" alt="CI Status">
+  </a>
+  <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey?style=flat-square" alt="Platforms">
+</p>
+
+<p align="center">
+  Built with <a href="https://tauri.app/">Tauri 2</a>, React, TypeScript, and Rust.
+</p>
+
+---
 
 ## Features
 
-- **HTTP Client** -- Send GET, POST, PUT, PATCH, DELETE, HEAD, and OPTIONS requests with detailed response timing (DNS, connect, TLS, first byte, total)
-- **Collections & Folders** -- Organize requests into collections with nested folder hierarchies
-- **Environments** -- Define variables per environment and reference them with `{{variable}}` syntax in URLs, headers, query params, and request bodies
-- **Encrypted Secrets** -- Secret environment variables are encrypted at rest using AES-256-GCM with a machine-specific key
-- **Request History** -- Automatic logging of every request/response with full snapshots
-- **Postman Import/Export** -- Import and export Postman Collection v2.1 format
-- **Tabs** -- Work on multiple requests simultaneously with per-tab isolation
-- **Enterprise & Hacker Modes** -- Enterprise mode for visual editors and confirmations; Hacker mode for keyboard-driven workflows, compact layout, and a command palette (Cmd+K)
-- **Light & Dark Themes** -- Toggle between light and dark UI themes
+- **HTTP Client** — Send GET, POST, PUT, PATCH, DELETE, HEAD, and OPTIONS requests with detailed response timing (DNS, connect, TLS, first byte, total)
+- **Collections & Folders** — Organize requests into collections with nested folder hierarchies
+- **Environments** — Define variables per environment and reference them with `{{variable}}` syntax in URLs, headers, query params, and request bodies
+- **Encrypted Secrets** — Secret environment variables are encrypted at rest using AES-256-GCM with a machine-specific key
+- **Request History** — Automatic logging of every request/response with full snapshots
+- **Postman Import/Export** — Import and export Postman Collection v2.1 format
+- **Export as Code** — Copy requests as cURL, wget, fetch, or HTTPie commands
+- **Tabs** — Work on multiple requests simultaneously with per-tab isolation
+- **Enterprise & Hacker Modes** — Enterprise mode for visual editors and confirmations; Hacker mode for keyboard-driven workflows, compact layout, and a command palette (Cmd+K)
+- **Light & Dark Themes** — Toggle between light and dark UI themes
+
+## Download
+
+Download the latest version for your platform from the [Releases](https://github.com/MehmetMelik/reqtor/releases) page:
+
+| Platform | Download |
+|----------|----------|
+| macOS (Apple Silicon) | `.dmg` |
+| macOS (Intel) | `.dmg` |
+| Windows | `.msi` or `.exe` |
+| Linux | `.deb` or `.AppImage` |
 
 ## Architecture
 
@@ -51,41 +88,16 @@ Frontend (React + TypeScript)          Rust Backend (Tauri)
 | Monorepo | pnpm workspaces + Turborepo |
 | Testing | Vitest + cargo test |
 
-## Project Structure
+## Development
 
-```
-reqtor/
-├── apps/
-│   └── desktop/                  # Tauri desktop app
-│       ├── src/                  # React frontend
-│       │   ├── components/       # Shared UI components
-│       │   ├── features/         # Feature modules (request-editor, response-viewer,
-│       │   │                     #   collections, environments, history, tabs,
-│       │   │                     #   settings, command-palette)
-│       │   ├── stores/           # Zustand stores
-│       │   └── lib/              # Utilities (IPC client, cn)
-│       └── src-tauri/            # Rust backend
-│           └── src/
-│               ├── commands/     # Tauri command handlers
-│               ├── db/           # SQLite schema, migrations, repositories
-│               ├── http/         # reqwest-based HTTP executor
-│               ├── crypto/       # AES-GCM encryption
-│               ├── io/           # Postman import/export
-│               └── models/       # Rust domain types (serde)
-├── packages/
-│   ├── domain/                   # Pure TS domain types + operations
-│   └── shared/                   # TS utilities, ID generation, constants
-└── .github/workflows/            # CI and release workflows
-```
-
-## Prerequisites
+### Prerequisites
 
 - [Node.js](https://nodejs.org/) >= 20
 - [pnpm](https://pnpm.io/) >= 9
 - [Rust](https://www.rust-lang.org/tools/install) (stable toolchain)
 - **Linux only:** `libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libssl-dev libgtk-3-dev`
 
-## Getting Started
+### Getting Started
 
 ```bash
 # Clone the repository
@@ -103,7 +115,7 @@ cd apps/desktop
 pnpm tauri dev
 ```
 
-## Scripts
+### Scripts
 
 From the repository root:
 
@@ -115,7 +127,7 @@ pnpm lint         # Run linters
 pnpm format       # Format code with Prettier
 ```
 
-## Testing
+### Testing
 
 ```bash
 # TypeScript tests (domain package)
@@ -126,7 +138,7 @@ cd apps/desktop/src-tauri
 cargo test
 ```
 
-## Building for Production
+### Building for Production
 
 ```bash
 cd apps/desktop
@@ -140,19 +152,33 @@ This produces platform-specific installers:
 
 Build artifacts are located in `apps/desktop/src-tauri/target/release/bundle/`.
 
-## CI/CD
+## Project Structure
 
-The project includes GitHub Actions workflows:
-
-- **CI** (`.github/workflows/ci.yml`) -- Runs on push to `main` and pull requests. Lints and tests TypeScript and Rust, then builds on macOS (aarch64 + x86_64), Linux, and Windows.
-- **Release** (`.github/workflows/release.yml`) -- Triggered by pushing a `v*` tag. Builds all platforms and uploads installers to a GitHub release draft.
-
-To create a release:
-
-```bash
-git tag v0.1.0
-git push origin v0.1.0
 ```
+reqtor/
+├── apps/
+│   └── desktop/                  # Tauri desktop app
+│       ├── src/                  # React frontend
+│       │   ├── components/       # Shared UI components
+│       │   ├── features/         # Feature modules
+│       │   └── lib/              # Utilities (IPC client, cn)
+│       └── src-tauri/            # Rust backend
+│           └── src/
+│               ├── commands/     # Tauri command handlers
+│               ├── db/           # SQLite schema, migrations, repositories
+│               ├── http/         # reqwest-based HTTP executor
+│               ├── crypto/       # AES-GCM encryption
+│               ├── io/           # Postman import/export
+│               └── models/       # Rust domain types (serde)
+├── packages/
+│   ├── domain/                   # Pure TS domain types + operations
+│   └── shared/                   # TS utilities, ID generation, constants
+└── .github/workflows/            # CI and release workflows
+```
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
