@@ -36,16 +36,27 @@ jobs:
 
       - name: Update version in config files
         run: |
-          VERSION=${{ steps.version.outputs.VERSION }}
-          # Update tauri.conf.json
-          sed -i.bak 's/"version": "[^"]*"/"version": "'"$VERSION"'"/' apps/desktop/src-tauri/tauri.conf.json
-          # Update Cargo.toml (only the package version, not dependencies)
-          sed -i.bak '0,/^version = "[^"]*"/s//version = "'"$VERSION"'"/' apps/desktop/src-tauri/Cargo.toml
-          # Update package.json
-          sed -i.bak 's/"version": "[^"]*"/"version": "'"$VERSION"'"/' apps/desktop/package.json
-          # Clean up backup files
-          rm -f apps/desktop/src-tauri/tauri.conf.json.bak apps/desktop/src-tauri/Cargo.toml.bak apps/desktop/package.json.bak
-        shell: bash
+          node -e "
+            const fs = require('fs');
+            const version = '${{ steps.version.outputs.VERSION }}';
+
+            // Update tauri.conf.json
+            const tauriConf = JSON.parse(fs.readFileSync('apps/desktop/src-tauri/tauri.conf.json', 'utf8'));
+            tauriConf.version = version;
+            fs.writeFileSync('apps/desktop/src-tauri/tauri.conf.json', JSON.stringify(tauriConf, null, 2) + '\n');
+
+            // Update package.json
+            const pkg = JSON.parse(fs.readFileSync('apps/desktop/package.json', 'utf8'));
+            pkg.version = version;
+            fs.writeFileSync('apps/desktop/package.json', JSON.stringify(pkg, null, 2) + '\n');
+
+            // Update Cargo.toml (replace first version = line only)
+            let cargo = fs.readFileSync('apps/desktop/src-tauri/Cargo.toml', 'utf8');
+            cargo = cargo.replace(/^version = \"[^\"]*\"/m, 'version = \"' + version + '\"');
+            fs.writeFileSync('apps/desktop/src-tauri/Cargo.toml', cargo);
+
+            console.log('Updated all config files to version ' + version);
+          "
 
       - uses: pnpm/action-setup@v4
 
