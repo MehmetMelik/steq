@@ -57,6 +57,8 @@ pub enum BodyType {
     FormUrlEncoded,
     #[serde(rename = "multipart")]
     Multipart,
+    #[serde(rename = "graphql")]
+    GraphQL,
 }
 
 impl BodyType {
@@ -67,6 +69,7 @@ impl BodyType {
             BodyType::Text => "text",
             BodyType::FormUrlEncoded => "form_url_encoded",
             BodyType::Multipart => "multipart",
+            BodyType::GraphQL => "graphql",
         }
     }
 
@@ -76,6 +79,7 @@ impl BodyType {
             "text" => BodyType::Text,
             "form_url_encoded" => BodyType::FormUrlEncoded,
             "multipart" => BodyType::Multipart,
+            "graphql" => BodyType::GraphQL,
             _ => BodyType::None,
         }
     }
@@ -180,6 +184,7 @@ mod tests {
             ("text", BodyType::Text),
             ("form_url_encoded", BodyType::FormUrlEncoded),
             ("multipart", BodyType::Multipart),
+            ("graphql", BodyType::GraphQL),
         ];
 
         for (s, variant) in &types {

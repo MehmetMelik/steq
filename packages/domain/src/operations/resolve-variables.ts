@@ -12,6 +12,32 @@ export function resolveString(
   });
 }
 
+interface GraphQLContent {
+  query: string;
+  variables: string;
+  operationName: string;
+}
+
+/**
+ * Resolves variables in GraphQL body content (query, variables, operationName fields).
+ */
+function resolveGraphQLContent(
+  content: string,
+  variables: Map<string, string>,
+): string {
+  try {
+    const parsed: GraphQLContent = JSON.parse(content);
+    const resolved: GraphQLContent = {
+      query: resolveString(parsed.query, variables),
+      variables: resolveString(parsed.variables, variables),
+      operationName: resolveString(parsed.operationName, variables),
+    };
+    return JSON.stringify(resolved);
+  } catch {
+    return resolveString(content, variables);
+  }
+}
+
 /**
  * Resolves variables in all fields of an ExecuteRequestInput.
  */
@@ -36,7 +62,9 @@ export function resolveRequestVariables(
     })),
     body_type: input.body_type,
     body_content: input.body_content
-      ? resolveString(input.body_content, variables)
+      ? input.body_type === 'graphql'
+        ? resolveGraphQLContent(input.body_content, variables)
+        : resolveString(input.body_content, variables)
       : input.body_content,
   };
 }

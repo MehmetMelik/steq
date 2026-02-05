@@ -1,11 +1,13 @@
 import { cn } from '../../../lib/cn';
 import type { BodyType } from '@reqtor/domain';
+import { GraphQLEditor } from './GraphQLEditor';
 
 const BODY_TYPES: { label: string; value: BodyType }[] = [
   { label: 'None', value: 'none' },
   { label: 'JSON', value: 'json' },
   { label: 'Text', value: 'text' },
   { label: 'Form URL Encoded', value: 'form_url_encoded' },
+  { label: 'GraphQL', value: 'graphql' },
 ];
 
 interface BodyEditorProps {
@@ -37,7 +39,10 @@ export function BodyEditor({ bodyType, bodyContent, onTypeChange, onContentChang
           </button>
         ))}
       </div>
-      {bodyType !== 'none' && (
+      {bodyType === 'graphql' && (
+        <GraphQLEditor content={bodyContent} onChange={onContentChange} />
+      )}
+      {bodyType !== 'none' && bodyType !== 'graphql' && (
         <textarea
           value={bodyContent}
           onChange={(e) => onContentChange(e.target.value)}

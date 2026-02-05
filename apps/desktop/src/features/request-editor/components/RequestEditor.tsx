@@ -6,6 +6,7 @@ import { useTabsStore } from '../../tabs/store/tabs.store';
 import { useEnvironmentsStore } from '../../environments/store/environments.store';
 import { ipc } from '../../../lib/ipc-client';
 import { resolveRequestVariables } from '@reqtor/domain';
+import type { BodyType } from '@reqtor/domain';
 import { MethodSelector } from './MethodSelector';
 import { UrlBar } from './UrlBar';
 import { SendButton } from './SendButton';
@@ -13,6 +14,12 @@ import { HeadersEditor } from './HeadersEditor';
 import { QueryParamsEditor } from './QueryParamsEditor';
 import { BodyEditor } from './BodyEditor';
 import { CopyAsButton } from './CopyAsButton';
+
+const EMPTY_GRAPHQL_CONTENT = JSON.stringify({
+  query: '',
+  variables: '',
+  operationName: '',
+});
 
 type EditorTab = 'headers' | 'params' | 'body';
 
@@ -181,7 +188,18 @@ export function RequestEditor({ tabId, workspaceId }: RequestEditorProps) {
           <BodyEditor
             bodyType={draft.bodyType}
             bodyContent={draft.bodyContent}
-            onTypeChange={(bodyType) => setDraftField(tabId, { bodyType })}
+            onTypeChange={(bodyType: BodyType) => {
+              const updates: { bodyType: BodyType; method?: typeof draft.method; bodyContent?: string } = { bodyType };
+              // Auto-switch to POST when GraphQL body type is selected
+              if (bodyType === 'graphql' && draft.method === 'GET') {
+                updates.method = 'POST';
+              }
+              // Initialize empty GraphQL structure when switching to GraphQL
+              if (bodyType === 'graphql' && draft.bodyType !== 'graphql') {
+                updates.bodyContent = EMPTY_GRAPHQL_CONTENT;
+              }
+              setDraftField(tabId, updates);
+            }}
             onContentChange={(bodyContent) => setDraftField(tabId, { bodyContent })}
           />
         )}

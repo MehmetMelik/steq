@@ -1,6 +1,6 @@
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS';
 
-export type BodyType = 'none' | 'json' | 'text' | 'form_url_encoded' | 'multipart';
+export type BodyType = 'none' | 'json' | 'text' | 'form_url_encoded' | 'multipart' | 'graphql';
 
 export interface KeyValue {
   key: string;

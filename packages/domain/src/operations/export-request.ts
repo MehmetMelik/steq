@@ -50,9 +50,59 @@ function getContentType(bodyType: BodyType): string | null {
       return 'text/plain';
     case 'multipart':
       return 'multipart/form-data';
+    case 'graphql':
+      return 'application/json';
     default:
       return null;
   }
+}
+
+interface GraphQLContent {
+  query: string;
+  variables: string;
+  operationName: string;
+}
+
+/**
+ * Builds the final JSON body for a GraphQL request from stored structure.
+ */
+function buildGraphQLBody(content: string): string {
+  try {
+    const parsed: GraphQLContent = JSON.parse(content);
+    const body: Record<string, unknown> = {
+      query: parsed.query,
+    };
+
+    if (parsed.variables && parsed.variables.trim()) {
+      try {
+        body.variables = JSON.parse(parsed.variables);
+      } catch {
+        // If variables is not valid JSON, skip it
+      }
+    }
+
+    if (parsed.operationName && parsed.operationName.trim()) {
+      body.operationName = parsed.operationName;
+    }
+
+    return JSON.stringify(body);
+  } catch {
+    return content;
+  }
+}
+
+/**
+ * Returns the body content, transforming it for graphql type.
+ */
+function getBodyContent(
+  bodyType: BodyType,
+  bodyContent: string | null,
+): string | null {
+  if (!bodyContent) return null;
+  if (bodyType === 'graphql') {
+    return buildGraphQLBody(bodyContent);
+  }
+  return bodyContent;
 }
 
 /**
@@ -84,6 +134,7 @@ function getEffectiveHeaders(
 function exportAsCurl(input: ExportRequestInput): string {
   const url = buildUrl(input.url, input.queryParams);
   const headers = getEffectiveHeaders(input.headers, input.bodyType);
+  const body = getBodyContent(input.bodyType, input.bodyContent);
 
   const parts: string[] = ['curl'];
 
@@ -98,8 +149,8 @@ function exportAsCurl(input: ExportRequestInput): string {
   }
 
   // Add body
-  if (input.bodyContent && input.bodyType !== 'none') {
-    parts.push(`-d ${shellEscape(input.bodyContent)}`);
+  if (body && input.bodyType !== 'none') {
+    parts.push(`-d ${shellEscape(body)}`);
   }
 
   // Add URL (always last)
@@ -118,6 +169,7 @@ function exportAsCurl(input: ExportRequestInput): string {
 function exportAsWget(input: ExportRequestInput): string {
   const url = buildUrl(input.url, input.queryParams);
   const headers = getEffectiveHeaders(input.headers, input.bodyType);
+  const body = getBodyContent(input.bodyType, input.bodyContent);
 
   const parts: string[] = ['wget'];
 
@@ -130,8 +182,8 @@ function exportAsWget(input: ExportRequestInput): string {
   }
 
   // Add body
-  if (input.bodyContent && input.bodyType !== 'none') {
-    parts.push(`--body-data=${shellEscape(input.bodyContent)}`);
+  if (body && input.bodyType !== 'none') {
+    parts.push(`--body-data=${shellEscape(body)}`);
   }
 
   // Output to stdout instead of file
@@ -153,6 +205,7 @@ function exportAsWget(input: ExportRequestInput): string {
 function exportAsFetch(input: ExportRequestInput): string {
   const url = buildUrl(input.url, input.queryParams);
   const headers = getEffectiveHeaders(input.headers, input.bodyType);
+  const body = getBodyContent(input.bodyType, input.bodyContent);
 
   const options: Record<string, unknown> = {
     method: input.method,
@@ -166,8 +219,8 @@ function exportAsFetch(input: ExportRequestInput): string {
     options.headers = headersObj;
   }
 
-  if (input.bodyContent && input.bodyType !== 'none') {
-    options.body = input.bodyContent;
+  if (body && input.bodyType !== 'none') {
+    options.body = body;
   }
 
   const optionsJson = JSON.stringify(options, null, 2);
@@ -180,6 +233,7 @@ function exportAsFetch(input: ExportRequestInput): string {
 function exportAsHttpie(input: ExportRequestInput): string {
   const url = buildUrl(input.url, input.queryParams);
   const headers = getEffectiveHeaders(input.headers, input.bodyType);
+  const body = getBodyContent(input.bodyType, input.bodyContent);
 
   const parts: string[] = ['http', input.method, shellEscape(url)];
 
@@ -189,9 +243,9 @@ function exportAsHttpie(input: ExportRequestInput): string {
   }
 
   // Add body for JSON (HTTPie can parse JSON bodies differently)
-  if (input.bodyContent && input.bodyType !== 'none') {
+  if (body && input.bodyType !== 'none') {
     // For raw body data, use echo pipe
-    return `echo ${shellEscape(input.bodyContent)} | ${parts.join(' ')}`;
+    return `echo ${shellEscape(body)} | ${parts.join(' ')}`;
   }
 
   // Format as multiline for readability

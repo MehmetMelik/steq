@@ -2,9 +2,55 @@ use std::time::Instant;
 
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use reqwest::Method;
+use serde::{Deserialize, Serialize};
 
 use crate::models::execution::{ExecutionResult, ExecutionTiming};
 use crate::models::request::{BodyType, ExecuteRequestInput, KeyValue};
+
+#[derive(Debug, Deserialize)]
+struct GraphQLInput {
+    query: String,
+    #[serde(default)]
+    variables: String,
+    #[serde(default, rename = "operationName")]
+    operation_name: String,
+}
+
+#[derive(Debug, Serialize)]
+struct GraphQLBody {
+    query: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    variables: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "operationName")]
+    operation_name: Option<String>,
+}
+
+fn build_graphql_body(content: &str) -> String {
+    let input: GraphQLInput = match serde_json::from_str(content) {
+        Ok(i) => i,
+        Err(_) => return content.to_string(),
+    };
+
+    let variables: Option<serde_json::Value> = if input.variables.trim().is_empty() {
+        None
+    } else {
+        serde_json::from_str(&input.variables).ok()
+    };
+
+    let operation_name = if input.operation_name.trim().is_empty() {
+        None
+    } else {
+        Some(input.operation_name)
+    };
+
+    let body = GraphQLBody {
+        query: input.query,
+        variables,
+        operation_name,
+    };
+
+    serde_json::to_string(&body).unwrap_or_else(|_| content.to_string())
+}
 
 pub async fn execute(input: &ExecuteRequestInput) -> ExecutionResult {
     let client = match reqwest::Client::builder()
@@ -98,6 +144,14 @@ pub async fn execute(input: &ExecuteRequestInput) -> ExecutionResult {
                 request_builder = request_builder
                     .header("Content-Type", "application/x-www-form-urlencoded")
                     .body(content.clone());
+            }
+        }
+        BodyType::GraphQL => {
+            if let Some(ref content) = input.body_content {
+                let graphql_body = build_graphql_body(content);
+                request_builder = request_builder
+                    .header("Content-Type", "application/json")
+                    .body(graphql_body);
             }
         }
         _ => {}
@@ -213,7 +267,7 @@ fn urlencoding_encode(s: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::urlencoding_encode;
+    use super::{build_graphql_body, urlencoding_encode};
 
     #[test]
     fn encode_no_special_chars() {
@@ -244,5 +298,32 @@ mod tests {
         let encoded = urlencoding_encode("日本");
         assert!(encoded.contains("%"));
         assert!(!encoded.contains("日"));
+    }
+
+    #[test]
+    fn build_graphql_body_basic() {
+        let input = r#"{"query":"query { users { id } }","variables":"","operationName":""}"#;
+        let result = build_graphql_body(input);
+        let parsed: serde_json::Value = serde_json::from_str(&result).unwrap();
+        assert_eq!(parsed["query"], "query { users { id } }");
+        assert!(parsed.get("variables").is_none());
+        assert!(parsed.get("operationName").is_none());
+    }
+
+    #[test]
+    fn build_graphql_body_with_variables() {
+        let input = r#"{"query":"query GetUser($id: ID!) { user(id: $id) { name } }","variables":"{\"id\":\"123\"}","operationName":"GetUser"}"#;
+        let result = build_graphql_body(input);
+        let parsed: serde_json::Value = serde_json::from_str(&result).unwrap();
+        assert_eq!(parsed["query"], "query GetUser($id: ID!) { user(id: $id) { name } }");
+        assert_eq!(parsed["variables"]["id"], "123");
+        assert_eq!(parsed["operationName"], "GetUser");
+    }
+
+    #[test]
+    fn build_graphql_body_invalid_json_passthrough() {
+        let input = "not valid json";
+        let result = build_graphql_body(input);
+        assert_eq!(result, "not valid json");
     }
 }
