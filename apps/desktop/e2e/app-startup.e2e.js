@@ -1,7 +1,7 @@
 describe('App Startup', () => {
   it('should display the app window', async () => {
     const title = await browser.getTitle();
-    expect(title).toBe('Apiary');
+    expect(title).toBe('Reqtor');
   });
 
   it('should show the initial UI layout', async () => {
@@ -10,7 +10,7 @@ describe('App Startup', () => {
     expect(await header.isDisplayed()).toBe(true);
 
     const headerText = await header.getText();
-    expect(headerText).toContain('Apiary');
+    expect(headerText).toContain('Reqtor');
 
     const tabBar = await $('[data-testid="tab-bar"]');
     expect(await tabBar.isDisplayed()).toBe(true);
