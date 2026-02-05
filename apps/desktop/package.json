@@ -1,5 +1,5 @@
 {
-  "name": "@reqtor/desktop",
+  "name": "@steq/desktop",
   "private": true,
   "version": "0.5.0",
   "type": "module",
@@ -13,8 +13,8 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@reqtor/domain": "workspace:*",
-    "@reqtor/shared": "workspace:*",
+    "@steq/domain": "workspace:*",
+    "@steq/shared": "workspace:*",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-dialog": "^2.6.0",
     "@tauri-apps/plugin-clipboard-manager": "^2",

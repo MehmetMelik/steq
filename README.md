@@ -1,22 +1,22 @@
 <p align="center">
-  <img src="apps/desktop/src-tauri/icons/icon.png" alt="Reqtor Logo" width="128" height="128">
+  <img src="apps/desktop/src-tauri/icons/icon.png" alt="Steq Logo" width="128" height="128">
 </p>
 
-<h1 align="center">Reqtor</h1>
+<h1 align="center">Steq</h1>
 
 <p align="center">
   A desktop API development environment for building, testing, and documenting HTTP APIs.
 </p>
 
 <p align="center">
-  <a href="https://github.com/MehmetMelik/reqtor/releases/latest">
-    <img src="https://img.shields.io/github/v/release/MehmetMelik/reqtor?style=flat-square&color=blue" alt="Latest Release">
+  <a href="https://github.com/MehmetMelik/steq/releases/latest">
+    <img src="https://img.shields.io/github/v/release/MehmetMelik/steq?style=flat-square&color=blue" alt="Latest Release">
   </a>
-  <a href="https://github.com/MehmetMelik/reqtor/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/MehmetMelik/reqtor?style=flat-square" alt="License">
+  <a href="https://github.com/MehmetMelik/steq/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/MehmetMelik/steq?style=flat-square" alt="License">
   </a>
-  <a href="https://github.com/MehmetMelik/reqtor/actions/workflows/ci.yml">
-    <img src="https://img.shields.io/github/actions/workflow/status/MehmetMelik/reqtor/ci.yml?style=flat-square&label=CI" alt="CI Status">
+  <a href="https://github.com/MehmetMelik/steq/actions/workflows/ci.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/MehmetMelik/steq/ci.yml?style=flat-square&label=CI" alt="CI Status">
   </a>
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey?style=flat-square" alt="Platforms">
 </p>
@@ -42,7 +42,7 @@
 
 ## Download
 
-Download the latest version for your platform from the [Releases](https://github.com/MehmetMelik/reqtor/releases) page:
+Download the latest version for your platform from the [Releases](https://github.com/MehmetMelik/steq/releases) page:
 
 | Platform | Download |
 |----------|----------|
@@ -101,14 +101,14 @@ Frontend (React + TypeScript)          Rust Backend (Tauri)
 
 ```bash
 # Clone the repository
-git clone https://github.com/MehmetMelik/reqtor.git
-cd reqtor
+git clone https://github.com/MehmetMelik/steq.git
+cd steq
 
 # Install dependencies
 pnpm install
 
 # Build the domain package
-pnpm --filter @reqtor/domain build
+pnpm --filter @steq/domain build
 
 # Start the development server (opens Tauri window with hot reload)
 cd apps/desktop
@@ -131,7 +131,7 @@ pnpm format       # Format code with Prettier
 
 ```bash
 # TypeScript tests (domain package)
-pnpm --filter @reqtor/domain test
+pnpm --filter @steq/domain test
 
 # Rust tests
 cd apps/desktop/src-tauri
@@ -155,7 +155,7 @@ Build artifacts are located in `apps/desktop/src-tauri/target/release/bundle/`.
 ## Project Structure
 
 ```
-reqtor/
+steq/
 ├── apps/
 │   └── desktop/                  # Tauri desktop app
 │       ├── src/                  # React frontend

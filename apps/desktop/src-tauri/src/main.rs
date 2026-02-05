@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    reqtor_desktop_lib::run()
+    steq_desktop_lib::run()
 }

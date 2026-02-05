@@ -1,13 +1,13 @@
 [package]
-name = "reqtor-desktop"
+name = "steq-desktop"
 version = "0.5.0"
-description = "Reqtor - API Development Environment"
-authors = ["Reqtor Team"]
+description = "Steq - API Development Environment"
+authors = ["Steq Team"]
 license = "MIT"
 edition = "2021"
 
 [lib]
-name = "reqtor_desktop_lib"
+name = "steq_desktop_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

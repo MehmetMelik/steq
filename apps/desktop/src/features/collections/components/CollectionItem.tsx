@@ -1,5 +1,5 @@
 import { cn } from '../../../lib/cn';
-import type { ApiRequest, HttpMethod } from '@reqtor/domain';
+import type { ApiRequest, HttpMethod } from '@steq/domain';
 
 const METHOD_COLORS: Record<HttpMethod, string> = {
   GET: 'text-method-get',

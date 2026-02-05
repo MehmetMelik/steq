@@ -1,14 +1,14 @@
-export class ReqtorError extends Error {
+export class SteqError extends Error {
   constructor(
     message: string,
     public readonly code: string,
   ) {
     super(message);
-    this.name = 'ReqtorError';
+    this.name = 'SteqError';
   }
 }
 
-export class IpcError extends ReqtorError {
+export class IpcError extends SteqError {
   constructor(message: string) {
     super(message, 'IPC_ERROR');
     this.name = 'IpcError';

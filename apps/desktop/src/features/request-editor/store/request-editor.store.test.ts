@@ -4,7 +4,7 @@ import {
   createEmptyDraft,
   requestToDraft,
 } from './request-editor.store';
-import type { ApiRequest } from '@reqtor/domain';
+import type { ApiRequest } from '@steq/domain';
 
 describe('request-editor.store', () => {
   beforeEach(() => {

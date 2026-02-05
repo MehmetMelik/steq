@@ -18,7 +18,7 @@ import { ModeToggle } from '../../features/settings/components/ModeToggle';
 import { CommandPalette } from '../../features/command-palette/components/CommandPalette';
 import type { Command } from '../../features/command-palette/components/CommandPalette';
 import { useSettingsStore } from '../../features/settings/store/settings.store';
-import type { ApiRequest, HistoryEntry, HttpMethod } from '@reqtor/domain';
+import type { ApiRequest, HistoryEntry, HttpMethod } from '@steq/domain';
 
 type SidebarTab = 'collections' | 'history';
 
@@ -241,7 +241,7 @@ export function AppShell() {
     <div className="flex flex-col h-screen bg-bg-primary">
       {/* Header */}
       <header data-testid="header" className="flex items-center justify-between h-10 px-4 border-b border-border bg-bg-secondary shrink-0">
-        <span className="text-sm font-bold text-accent">Reqtor</span>
+        <span className="text-sm font-bold text-accent">Steq</span>
         <div className="flex items-center gap-2">
           {workspaceId && (
             <>

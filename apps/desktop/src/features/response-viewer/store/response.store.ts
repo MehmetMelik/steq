@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { ExecutionResult } from '@reqtor/domain';
+import type { ExecutionResult } from '@steq/domain';
 
 interface TabResponse {
   result: ExecutionResult | null;

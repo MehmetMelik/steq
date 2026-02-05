@@ -1,5 +1,5 @@
 import { cn } from '../../../lib/cn';
-import type { ExecutionResult } from '@reqtor/domain';
+import type { ExecutionResult } from '@steq/domain';
 
 interface ResponseMetaProps {
   result: ExecutionResult;

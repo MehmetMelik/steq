@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { Environment } from '@reqtor/domain';
+import type { Environment } from '@steq/domain';
 
 vi.mock('../../../lib/ipc-client', () => ({
   ipc: {

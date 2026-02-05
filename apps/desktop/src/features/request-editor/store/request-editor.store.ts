@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { HttpMethod, BodyType, KeyValue, ApiRequest } from '@reqtor/domain';
+import type { HttpMethod, BodyType, KeyValue, ApiRequest } from '@steq/domain';
 
 export interface RequestDraft {
   id: string | null;

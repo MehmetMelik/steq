@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { HttpMethod } from '@reqtor/domain';
+import type { HttpMethod } from '@steq/domain';
 
 export interface TabInfo {
   id: string;

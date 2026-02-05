@@ -1,5 +1,5 @@
-export const APP_NAME = 'Reqtor';
-export const DB_FILENAME = 'reqtor.db';
+export const APP_NAME = 'Steq';
+export const DB_FILENAME = 'steq.db';
 
 export const HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'] as const;
 

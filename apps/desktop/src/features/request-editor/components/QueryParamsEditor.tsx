@@ -1,5 +1,5 @@
 import { KeyValueEditor } from '../../../components/ui/KeyValueEditor';
-import type { KeyValue } from '@reqtor/domain';
+import type { KeyValue } from '@steq/domain';
 
 interface QueryParamsEditorProps {
   params: KeyValue[];

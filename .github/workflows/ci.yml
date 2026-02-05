@@ -27,13 +27,13 @@ jobs:
         run: pnpm install --no-frozen-lockfile
 
       - name: Build domain package
-        run: pnpm --filter @reqtor/domain build
+        run: pnpm --filter @steq/domain build
 
       - name: TypeScript check
-        run: pnpm --filter @reqtor/desktop lint
+        run: pnpm --filter @steq/desktop lint
 
       - name: Run tests
-        run: pnpm --filter @reqtor/domain test
+        run: pnpm --filter @steq/domain test
 
   lint-and-test-rust:
     name: Lint & Test (Rust)
@@ -108,7 +108,7 @@ jobs:
         run: pnpm install --no-frozen-lockfile
 
       - name: Build domain package
-        run: pnpm --filter @reqtor/domain build
+        run: pnpm --filter @steq/domain build
 
       - name: Build Tauri app
         working-directory: apps/desktop
@@ -118,7 +118,7 @@ jobs:
         if: runner.os == 'macOS'
         uses: actions/upload-artifact@v4
         with:
-          name: reqtor-${{ matrix.target }}
+          name: steq-${{ matrix.target }}
           path: |
             apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg
             apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/macos/*.app
@@ -127,7 +127,7 @@ jobs:
         if: runner.os == 'Linux'
         uses: actions/upload-artifact@v4
         with:
-          name: reqtor-${{ matrix.target }}
+          name: steq-${{ matrix.target }}
           path: |
             apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/deb/*.deb
             apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/appimage/*.AppImage
@@ -136,7 +136,7 @@ jobs:
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
         with:
-          name: reqtor-${{ matrix.target }}
+          name: steq-${{ matrix.target }}
           path: |
             apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/msi/*.msi
             apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/nsis/*.exe

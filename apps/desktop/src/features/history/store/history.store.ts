@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { HistoryEntry } from '@reqtor/domain';
+import type { HistoryEntry } from '@steq/domain';
 import { ipc } from '../../../lib/ipc-client';
 
 interface HistoryState {

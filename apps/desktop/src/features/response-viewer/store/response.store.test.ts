@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useResponseStore } from './response.store';
-import type { ExecutionResult } from '@reqtor/domain';
+import type { ExecutionResult } from '@steq/domain';
 
 const mockResult: ExecutionResult = {
   status: 200,

@@ -17,7 +17,7 @@ import type {
   UpdateEnvironmentInput,
   HistoryEntry,
   HistoryQuery,
-} from '@reqtor/domain';
+} from '@steq/domain';
 
 export const ipc = {
   request: {

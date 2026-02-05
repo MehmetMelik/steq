@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { writeText } from '@tauri-apps/plugin-clipboard-manager';
 import { cn } from '../../../lib/cn';
-import { exportRequest, ExportFormat, ExportRequestInput } from '@reqtor/domain';
+import { exportRequest, ExportFormat, ExportRequestInput } from '@steq/domain';
 import type { RequestDraft } from '../store/request-editor.store';
 
 interface CopyAsButtonProps {

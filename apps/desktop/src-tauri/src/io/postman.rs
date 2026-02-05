@@ -240,7 +240,7 @@ fn import_items(
     Ok(())
 }
 
-/// Exports a Reqtor collection to Postman v2.1 JSON format.
+/// Exports a Steq collection to Postman v2.1 JSON format.
 pub fn export_postman_collection(
     db: &Database,
     collection_id: &str,

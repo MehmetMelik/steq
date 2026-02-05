@@ -1,5 +1,5 @@
 import { cn } from '../../../lib/cn';
-import type { BodyType } from '@reqtor/domain';
+import type { BodyType } from '@steq/domain';
 import { GraphQLEditor } from './GraphQLEditor';
 
 const BODY_TYPES: { label: string; value: BodyType }[] = [

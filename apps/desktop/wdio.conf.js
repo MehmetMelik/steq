@@ -23,7 +23,7 @@ export const config = {
       'tauri:options': {
         application: resolve(
           __dirname,
-          'src-tauri/target/debug/reqtor-desktop',
+          'src-tauri/target/debug/steq-desktop',
         ),
       },
     },

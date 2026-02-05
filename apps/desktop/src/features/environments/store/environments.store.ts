@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Environment, UpdateEnvironmentInput } from '@reqtor/domain';
+import type { Environment, UpdateEnvironmentInput } from '@steq/domain';
 import { ipc } from '../../../lib/ipc-client';
 
 interface EnvironmentsState {

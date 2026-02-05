@@ -1,5 +1,5 @@
 import { cn } from '../../../lib/cn';
-import type { HttpMethod } from '@reqtor/domain';
+import type { HttpMethod } from '@steq/domain';
 
 const METHODS: HttpMethod[] = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
 
