@@ -40,7 +40,11 @@ jobs:
         run: cargo install tauri-driver --locked
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
+
+      - name: Install WebdriverIO (npm)
+        working-directory: apps/desktop
+        run: npm install --no-save @wdio/cli @wdio/local-runner @wdio/mocha-framework @wdio/spec-reporter
 
       - name: Build packages
         run: |
