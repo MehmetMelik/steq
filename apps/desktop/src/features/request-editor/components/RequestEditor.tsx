@@ -12,6 +12,7 @@ import { SendButton } from './SendButton';
 import { HeadersEditor } from './HeadersEditor';
 import { QueryParamsEditor } from './QueryParamsEditor';
 import { BodyEditor } from './BodyEditor';
+import { CopyAsButton } from './CopyAsButton';
 
 type EditorTab = 'headers' | 'params' | 'body';
 
@@ -137,6 +138,7 @@ export function RequestEditor({ tabId, workspaceId }: RequestEditorProps) {
           variables={resolvedVariables}
         />
         <SendButton onClick={handleSend} loading={responseLoading} />
+        <CopyAsButton draft={draft} resolvedVariables={resolvedVariables} />
       </div>
 
       {/* Tabs */}
