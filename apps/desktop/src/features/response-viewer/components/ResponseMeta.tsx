@@ -28,15 +28,15 @@ export function ResponseMeta({ result }: ResponseMetaProps) {
   return (
     <div className="flex items-center gap-3 p-3 border-b border-border">
       {result.status > 0 && (
-        <span className={cn('px-2 py-0.5 rounded text-xs font-bold', statusColor(result.status))}>
+        <span data-testid="response-status" className={cn('px-2 py-0.5 rounded text-xs font-bold', statusColor(result.status))}>
           {result.status} {result.status_text}
         </span>
       )}
-      <span className="text-xs text-text-muted">
+      <span data-testid="response-time" className="text-xs text-text-muted">
         {formatMs(result.timing.total_ms)}
       </span>
       {result.size_bytes > 0 && (
-        <span className="text-xs text-text-muted">{formatBytes(result.size_bytes)}</span>
+        <span data-testid="response-size" className="text-xs text-text-muted">{formatBytes(result.size_bytes)}</span>
       )}
       {result.error && (
         <span className="text-xs text-error font-medium">{result.error}</span>

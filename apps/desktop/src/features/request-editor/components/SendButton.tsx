@@ -8,6 +8,7 @@ interface SendButtonProps {
 export function SendButton({ onClick, loading }: SendButtonProps) {
   return (
     <button
+      data-testid="send-button"
       onClick={onClick}
       disabled={loading}
       className={cn(

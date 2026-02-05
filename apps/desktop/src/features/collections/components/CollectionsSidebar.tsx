@@ -59,6 +59,7 @@ export function CollectionsSidebar({
         <div className="flex items-center gap-0.5">
           {onImport && (
             <button
+              data-testid="import-button"
               onClick={onImport}
               className="w-6 h-6 flex items-center justify-center text-text-muted
                          hover:text-text-primary hover:bg-bg-hover rounded transition-colors text-[10px]"
@@ -68,6 +69,7 @@ export function CollectionsSidebar({
             </button>
           )}
           <button
+            data-testid="new-collection-button"
             onClick={() => setShowCreate(true)}
             className="w-6 h-6 flex items-center justify-center text-text-muted
                        hover:text-text-primary hover:bg-bg-hover rounded transition-colors text-lg"
@@ -80,7 +82,7 @@ export function CollectionsSidebar({
 
       <div className="flex-1 overflow-y-auto py-1">
         {collections.length === 0 && (
-          <div className="px-3 py-4 text-xs text-text-muted text-center">
+          <div data-testid="collections-empty" className="px-3 py-4 text-xs text-text-muted text-center">
             No collections yet.
             <br />
             Click + to create one.

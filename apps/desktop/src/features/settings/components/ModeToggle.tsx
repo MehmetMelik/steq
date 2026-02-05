@@ -10,6 +10,7 @@ export function ModeToggle() {
   return (
     <div className="flex items-center gap-1">
       <button
+        data-testid="theme-toggle"
         onClick={toggleTheme}
         className="px-1.5 py-0.5 text-[10px] text-text-muted hover:text-text-primary
                    hover:bg-bg-hover rounded transition-colors"
@@ -18,6 +19,7 @@ export function ModeToggle() {
         {theme === 'dark' ? 'LGT' : 'DRK'}
       </button>
       <button
+        data-testid="mode-toggle"
         onClick={toggleMode}
         className={cn(
           'px-1.5 py-0.5 text-[10px] rounded transition-colors',

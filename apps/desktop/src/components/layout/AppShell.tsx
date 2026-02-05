@@ -240,13 +240,14 @@ export function AppShell() {
   return (
     <div className="flex flex-col h-screen bg-bg-primary">
       {/* Header */}
-      <header className="flex items-center justify-between h-10 px-4 border-b border-border bg-bg-secondary shrink-0">
+      <header data-testid="header" className="flex items-center justify-between h-10 px-4 border-b border-border bg-bg-secondary shrink-0">
         <span className="text-sm font-bold text-accent">Apiary</span>
         <div className="flex items-center gap-2">
           {workspaceId && (
             <>
               <EnvironmentSelector workspaceId={workspaceId} />
               <button
+                data-testid="env-button"
                 onClick={() => setShowEnvEditor(true)}
                 className="px-2 py-1 text-xs text-text-muted hover:text-text-primary
                            hover:bg-bg-hover rounded transition-colors"
@@ -259,6 +260,7 @@ export function AppShell() {
           <ModeToggle />
           {mode === 'hacker' && (
             <button
+              data-testid="new-tab-shortcut"
               onClick={() => setShowCommandPalette(true)}
               className="px-1.5 py-0.5 text-[10px] text-text-muted hover:text-text-primary
                          hover:bg-bg-hover rounded transition-colors font-mono"
@@ -276,12 +278,13 @@ export function AppShell() {
       {/* Main content */}
       <div className="flex flex-1 min-h-0">
         {/* Sidebar */}
-        <div className="w-60 shrink-0 border-r border-border bg-bg-secondary overflow-hidden flex flex-col">
+        <div data-testid="sidebar" className="w-60 shrink-0 border-r border-border bg-bg-secondary overflow-hidden flex flex-col">
           {/* Sidebar tab switcher */}
           <div className="flex border-b border-border shrink-0">
             {sidebarTabs.map((tab) => (
               <button
                 key={tab.id}
+                data-testid={`sidebar-tab-${tab.id}`}
                 onClick={() => setSidebarTab(tab.id)}
                 className={cn(
                   'flex-1 py-1.5 text-[10px] font-semibold uppercase tracking-wider transition-colors relative',

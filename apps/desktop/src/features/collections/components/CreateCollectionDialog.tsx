@@ -14,10 +14,11 @@ export function CreateCollectionDialog({ onSubmit, onCancel }: CreateCollectionD
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div data-testid="create-collection-dialog" className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-bg-secondary border border-border rounded-lg p-4 w-80 shadow-xl">
         <h3 className="text-sm font-semibold text-text-primary mb-3">New Collection</h3>
         <input
+          data-testid="collection-name-input"
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -33,6 +34,7 @@ export function CreateCollectionDialog({ onSubmit, onCancel }: CreateCollectionD
         />
         <div className="flex justify-end gap-2 mt-4">
           <button
+            data-testid="create-collection-cancel"
             onClick={onCancel}
             className="px-3 py-1.5 text-sm text-text-secondary hover:text-text-primary
                        hover:bg-bg-hover rounded transition-colors"
@@ -40,6 +42,7 @@ export function CreateCollectionDialog({ onSubmit, onCancel }: CreateCollectionD
             Cancel
           </button>
           <button
+            data-testid="create-collection-submit"
             onClick={handleSubmit}
             disabled={!name.trim()}
             className="px-3 py-1.5 text-sm bg-accent text-white rounded

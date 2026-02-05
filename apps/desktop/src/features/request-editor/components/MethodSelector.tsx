@@ -21,6 +21,7 @@ interface MethodSelectorProps {
 export function MethodSelector({ value, onChange }: MethodSelectorProps) {
   return (
     <select
+      data-testid="method-selector"
       value={value}
       onChange={(e) => onChange(e.target.value as HttpMethod)}
       className={cn(

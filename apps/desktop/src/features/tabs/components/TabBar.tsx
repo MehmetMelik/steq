@@ -23,10 +23,11 @@ export function TabBar({ onNewTab }: TabBarProps) {
   const closeTab = useTabsStore((s) => s.closeTab);
 
   return (
-    <div className="flex items-center h-9 bg-bg-secondary border-b border-border shrink-0 overflow-x-auto">
+    <div data-testid="tab-bar" className="flex items-center h-9 bg-bg-secondary border-b border-border shrink-0 overflow-x-auto">
       {tabs.map((tab) => (
         <button
           key={tab.id}
+          data-testid={`tab-${tab.id}`}
           onClick={() => setActiveTab(tab.id)}
           className={cn(
             'flex items-center gap-1.5 h-full px-3 text-xs border-r border-border',
@@ -43,6 +44,7 @@ export function TabBar({ onNewTab }: TabBarProps) {
           {tab.dirty && <span className="w-1.5 h-1.5 rounded-full bg-warning shrink-0" />}
           {tabs.length > 1 && (
             <span
+              data-testid="tab-close"
               onClick={(e) => {
                 e.stopPropagation();
                 closeTab(tab.id);
@@ -60,6 +62,7 @@ export function TabBar({ onNewTab }: TabBarProps) {
         </button>
       ))}
       <button
+        data-testid="new-tab-button"
         onClick={onNewTab}
         className="flex items-center justify-center w-8 h-full text-text-muted
                    hover:text-text-primary hover:bg-bg-hover transition-colors shrink-0"

@@ -24,6 +24,7 @@ export function UrlBar({ value, onChange, onSend, variables }: UrlBarProps) {
   return (
     <div className="flex-1 relative">
       <input
+        data-testid="url-input"
         ref={inputRef}
         type="text"
         value={value}

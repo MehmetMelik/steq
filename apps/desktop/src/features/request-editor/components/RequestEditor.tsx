@@ -108,6 +108,7 @@ export function RequestEditor({ tabId, workspaceId }: RequestEditorProps) {
       {/* Request name */}
       <div className="flex items-center gap-2 px-3 pt-2">
         <input
+          data-testid="request-name-input"
           type="text"
           value={draft.name}
           onChange={(e) => setDraftField(tabId, { name: e.target.value })}
@@ -143,6 +144,7 @@ export function RequestEditor({ tabId, workspaceId }: RequestEditorProps) {
         {tabs.map((tab) => (
           <button
             key={tab.id}
+            data-testid={`editor-tab-${tab.id}`}
             onClick={() => setActiveTab(tab.id)}
             className={cn(
               'px-4 py-2 text-sm font-medium transition-colors relative',

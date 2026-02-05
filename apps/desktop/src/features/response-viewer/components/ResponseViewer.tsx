@@ -19,7 +19,7 @@ export function ResponseViewer({ tabId }: ResponseViewerProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full text-text-muted">
+      <div data-testid="response-loading" className="flex items-center justify-center h-full text-text-muted">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
           <span className="text-sm">Sending request...</span>
@@ -30,7 +30,7 @@ export function ResponseViewer({ tabId }: ResponseViewerProps) {
 
   if (!result) {
     return (
-      <div className="flex items-center justify-center h-full text-text-muted">
+      <div data-testid="response-empty" className="flex items-center justify-center h-full text-text-muted">
         <div className="text-center">
           <div className="text-lg mb-1">No response yet</div>
           <div className="text-sm">Enter a URL and click Send, or press Ctrl+Enter</div>
@@ -49,7 +49,7 @@ export function ResponseViewer({ tabId }: ResponseViewerProps) {
   ];
 
   return (
-    <div className="flex flex-col h-full">
+    <div data-testid="response-viewer" className="flex flex-col h-full">
       <ResponseMeta result={result} />
       <div className="flex border-b border-border px-3">
         {tabs.map((tab) => (
