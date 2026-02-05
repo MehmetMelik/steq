@@ -1,9 +1,12 @@
 import { spawn } from 'node:child_process';
-import { resolve, dirname } from 'node:path';
+import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
+import { homedir } from 'node:os';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const cargoHome = process.env.CARGO_HOME || join(homedir(), '.cargo');
+const tauriDriverPath = join(cargoHome, 'bin', 'tauri-driver');
 
 let tauriDriver;
 
@@ -45,7 +48,7 @@ export const config = {
 
   async beforeSession() {
     return new Promise((resolve, reject) => {
-      tauriDriver = spawn('tauri-driver', [], {
+      tauriDriver = spawn(tauriDriverPath, [], {
         stdio: ['ignore', 'pipe', 'pipe'],
       });
 
