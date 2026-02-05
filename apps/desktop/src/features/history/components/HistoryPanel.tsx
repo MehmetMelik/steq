@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { cn } from '../../../lib/cn';
 import { useHistoryStore } from '../store/history.store';
-import type { HistoryEntry } from '@apiary/domain';
+import type { HistoryEntry } from '@reqtor/domain';
 
 const METHOD_COLORS: Record<string, string> = {
   GET: 'text-method-get',

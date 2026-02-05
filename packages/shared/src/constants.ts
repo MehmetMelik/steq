@@ -1,5 +1,5 @@
-export const APP_NAME = 'Apiary';
-export const DB_FILENAME = 'apiary.db';
+export const APP_NAME = 'Reqtor';
+export const DB_FILENAME = 'reqtor.db';
 
 export const HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'] as const;
 

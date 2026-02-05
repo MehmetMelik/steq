@@ -17,7 +17,7 @@ import type {
   UpdateEnvironmentInput,
   HistoryEntry,
   HistoryQuery,
-} from '@apiary/domain';
+} from '@reqtor/domain';
 
 export const ipc = {
   request: {

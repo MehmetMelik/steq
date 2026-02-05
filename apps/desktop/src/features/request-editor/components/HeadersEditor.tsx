@@ -1,5 +1,5 @@
 import { KeyValueEditor } from '../../../components/ui/KeyValueEditor';
-import type { KeyValue } from '@apiary/domain';
+import type { KeyValue } from '@reqtor/domain';
 
 interface HeadersEditorProps {
   headers: KeyValue[];

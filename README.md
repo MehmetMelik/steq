@@ -1,4 +1,4 @@
-# Apiary
+# Reqtor
 
 A desktop API development environment for building, testing, and documenting HTTP APIs. Built with [Tauri 2](https://tauri.app/), React, TypeScript, and Rust.
 
@@ -54,7 +54,7 @@ Frontend (React + TypeScript)          Rust Backend (Tauri)
 ## Project Structure
 
 ```
-apiary/
+reqtor/
 ├── apps/
 │   └── desktop/                  # Tauri desktop app
 │       ├── src/                  # React frontend
@@ -89,14 +89,14 @@ apiary/
 
 ```bash
 # Clone the repository
-git clone https://github.com/MehmetMelik/apiary.git
-cd apiary
+git clone https://github.com/MehmetMelik/reqtor.git
+cd reqtor
 
 # Install dependencies
 pnpm install
 
 # Build the domain package
-pnpm --filter @apiary/domain build
+pnpm --filter @reqtor/domain build
 
 # Start the development server (opens Tauri window with hot reload)
 cd apps/desktop
@@ -119,7 +119,7 @@ pnpm format       # Format code with Prettier
 
 ```bash
 # TypeScript tests (domain package)
-pnpm --filter @apiary/domain test
+pnpm --filter @reqtor/domain test
 
 # Rust tests
 cd apps/desktop/src-tauri

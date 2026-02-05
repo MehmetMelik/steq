@@ -1,13 +1,13 @@
 [package]
-name = "apiary-desktop"
+name = "reqtor-desktop"
 version = "0.1.0"
-description = "Apiary - API Development Environment"
-authors = ["Apiary Team"]
+description = "Reqtor - API Development Environment"
+authors = ["Reqtor Team"]
 license = "MIT"
 edition = "2021"
 
 [lib]
-name = "apiary_desktop_lib"
+name = "reqtor_desktop_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

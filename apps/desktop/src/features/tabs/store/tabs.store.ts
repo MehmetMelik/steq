@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { HttpMethod } from '@apiary/domain';
+import type { HttpMethod } from '@reqtor/domain';
 
 export interface TabInfo {
   id: string;

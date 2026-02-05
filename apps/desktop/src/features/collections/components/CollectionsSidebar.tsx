@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { ApiRequest } from '@apiary/domain';
+import type { ApiRequest } from '@reqtor/domain';
 import { useCollectionsStore } from '../store/collections.store';
 import { CollectionTreeView } from './CollectionTree';
 import { CreateCollectionDialog } from './CreateCollectionDialog';

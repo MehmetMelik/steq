@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { CollectionTreeNode, ApiRequest } from '@apiary/domain';
+import type { CollectionTreeNode, ApiRequest } from '@reqtor/domain';
 import { useCollectionsStore } from '../store/collections.store';
 import { CollectionItem } from './CollectionItem';
 

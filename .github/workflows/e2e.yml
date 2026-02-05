@@ -47,8 +47,8 @@ jobs:
 
       - name: Build packages
         run: |
-          pnpm --filter @apiary/shared build
-          pnpm --filter @apiary/domain build
+          pnpm --filter @reqtor/shared build
+          pnpm --filter @reqtor/domain build
 
       - name: Run e2e tests
         working-directory: apps/desktop

@@ -116,3 +116,150 @@ impl Database {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::db::Database;
+    use crate::models::history::HistoryQuery;
+    use rusqlite::Connection;
+
+    fn setup_test_db() -> (Database, String) {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch("PRAGMA foreign_keys=ON;").unwrap();
+        let db = Database { conn };
+        db.run_migrations().unwrap();
+        let workspace = db.get_current_workspace().unwrap();
+        (db, workspace.id)
+    }
+
+    #[test]
+    fn save_and_list_history() {
+        let (db, wid) = setup_test_db();
+
+        db.save_history_entry(&wid, None, "GET", "https://a.com", "{}", Some(200), None, None, None, Some(100), None).unwrap();
+        std::thread::sleep(std::time::Duration::from_millis(10));
+        db.save_history_entry(&wid, None, "POST", "https://b.com", "{}", Some(201), None, None, None, Some(200), None).unwrap();
+
+        let entries = db
+            .list_history(&HistoryQuery {
+                workspace_id: wid,
+                limit: None,
+                offset: None,
+            })
+            .unwrap();
+
+        assert_eq!(entries.len(), 2);
+        // Reverse chronological order (newest first)
+        assert_eq!(entries[0].method, "POST");
+        assert_eq!(entries[1].method, "GET");
+    }
+
+    #[test]
+    fn list_history_with_limit_offset() {
+        let (db, wid) = setup_test_db();
+
+        for i in 0..5 {
+            db.save_history_entry(&wid, None, "GET", &format!("https://example.com/{}", i), "{}", Some(200), None, None, None, None, None).unwrap();
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
+
+        let entries = db
+            .list_history(&HistoryQuery {
+                workspace_id: wid.clone(),
+                limit: Some(2),
+                offset: Some(1),
+            })
+            .unwrap();
+
+        assert_eq!(entries.len(), 2);
+    }
+
+    #[test]
+    fn list_history_default_limit() {
+        let (db, wid) = setup_test_db();
+
+        // Default limit is 50, just verify it doesn't crash with no entries
+        let entries = db
+            .list_history(&HistoryQuery {
+                workspace_id: wid,
+                limit: None,
+                offset: None,
+            })
+            .unwrap();
+
+        assert!(entries.is_empty());
+    }
+
+    #[test]
+    fn delete_history_entry() {
+        let (db, wid) = setup_test_db();
+
+        let entry = db
+            .save_history_entry(&wid, None, "GET", "https://example.com", "{}", Some(200), None, None, None, None, None)
+            .unwrap();
+
+        db.delete_history_entry(&entry.id).unwrap();
+
+        let entries = db
+            .list_history(&HistoryQuery {
+                workspace_id: wid,
+                limit: None,
+                offset: None,
+            })
+            .unwrap();
+
+        assert!(entries.is_empty());
+    }
+
+    #[test]
+    fn clear_history() {
+        let (db, wid) = setup_test_db();
+
+        db.save_history_entry(&wid, None, "GET", "https://a.com", "{}", None, None, None, None, None, None).unwrap();
+        db.save_history_entry(&wid, None, "POST", "https://b.com", "{}", None, None, None, None, None, None).unwrap();
+
+        db.clear_history(&wid).unwrap();
+
+        let entries = db
+            .list_history(&HistoryQuery {
+                workspace_id: wid,
+                limit: None,
+                offset: None,
+            })
+            .unwrap();
+
+        assert!(entries.is_empty());
+    }
+
+    #[test]
+    fn history_entry_fields() {
+        let (db, wid) = setup_test_db();
+
+        let entry = db
+            .save_history_entry(
+                &wid,
+                Some("req-123"),
+                "PUT",
+                "https://api.example.com/resource",
+                "{\"name\":\"test\"}",
+                Some(200),
+                Some("[{\"key\":\"content-type\",\"value\":\"application/json\",\"enabled\":true}]"),
+                Some("{\"id\":1}"),
+                Some(1024),
+                Some(150),
+                None,
+            )
+            .unwrap();
+
+        assert!(!entry.id.is_empty());
+        assert_eq!(entry.request_id.as_deref(), Some("req-123"));
+        assert_eq!(entry.method, "PUT");
+        assert_eq!(entry.url, "https://api.example.com/resource");
+        assert_eq!(entry.response_status, Some(200));
+        assert_eq!(entry.response_size, Some(1024));
+        assert_eq!(entry.duration_ms, Some(150));
+        assert!(entry.response_headers.is_some());
+        assert!(entry.response_body.is_some());
+        assert!(entry.error.is_none());
+    }
+}

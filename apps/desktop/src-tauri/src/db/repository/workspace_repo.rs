@@ -19,3 +19,23 @@ impl Database {
         .map_err(|e| format!("Query get_workspace: {}", e))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::db::Database;
+    use rusqlite::Connection;
+
+    #[test]
+    fn get_current_workspace() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch("PRAGMA foreign_keys=ON;").unwrap();
+        let db = Database { conn };
+        db.run_migrations().unwrap();
+
+        let workspace = db.get_current_workspace().unwrap();
+        assert!(!workspace.id.is_empty());
+        assert_eq!(workspace.name, "Default Workspace");
+        assert!(!workspace.created_at.is_empty());
+        assert!(!workspace.updated_at.is_empty());
+    }
+}

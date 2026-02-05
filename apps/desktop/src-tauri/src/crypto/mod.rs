@@ -19,8 +19,8 @@ fn derive_key(seed: &str) -> [u8; 32] {
 fn get_machine_seed() -> String {
     let hostname = hostname::get()
         .map(|h| h.to_string_lossy().to_string())
-        .unwrap_or_else(|_| "apiary-default".to_string());
-    format!("apiary-secret-key-{}", hostname)
+        .unwrap_or_else(|_| "reqtor-default".to_string());
+    format!("reqtor-secret-key-{}", hostname)
 }
 
 /// Encrypts a plaintext string. Returns a base64-encoded string

@@ -20,10 +20,10 @@ importers:
 
   apps/desktop:
     dependencies:
-      '@apiary/domain':
+      '@reqtor/domain':
         specifier: workspace:*
         version: link:../../packages/domain
-      '@apiary/shared':
+      '@reqtor/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       '@tauri-apps/api':

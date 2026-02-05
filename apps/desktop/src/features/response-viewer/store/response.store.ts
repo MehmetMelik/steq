@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { ExecutionResult } from '@apiary/domain';
+import type { ExecutionResult } from '@reqtor/domain';
 
 interface TabResponse {
   result: ExecutionResult | null;

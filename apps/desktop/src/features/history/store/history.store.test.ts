@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { HistoryEntry } from '@apiary/domain';
+import type { HistoryEntry } from '@reqtor/domain';
 
 vi.mock('../../../lib/ipc-client', () => ({
   ipc: {

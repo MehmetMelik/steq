@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { cn } from '../../../lib/cn';
 import { useEnvironmentsStore } from '../store/environments.store';
-import type { Variable } from '@apiary/domain';
+import type { Variable } from '@reqtor/domain';
 
 interface EnvironmentEditorProps {
   workspaceId: string;

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { Collection, CollectionTree } from '@apiary/domain';
+import type { Collection, CollectionTree } from '@reqtor/domain';
 
 vi.mock('../../../lib/ipc-client', () => ({
   ipc: {

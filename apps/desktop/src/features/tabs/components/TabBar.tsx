@@ -1,6 +1,6 @@
 import { cn } from '../../../lib/cn';
 import { useTabsStore } from '../store/tabs.store';
-import type { HttpMethod } from '@apiary/domain';
+import type { HttpMethod } from '@reqtor/domain';
 
 const METHOD_COLORS: Record<HttpMethod, string> = {
   GET: 'text-method-get',

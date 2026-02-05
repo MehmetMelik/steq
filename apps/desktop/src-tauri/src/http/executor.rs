@@ -210,3 +210,39 @@ fn urlencoding_encode(s: &str) -> String {
     }
     result
 }
+
+#[cfg(test)]
+mod tests {
+    use super::urlencoding_encode;
+
+    #[test]
+    fn encode_no_special_chars() {
+        assert_eq!(urlencoding_encode("hello"), "hello");
+        assert_eq!(urlencoding_encode("ABCxyz0123456789"), "ABCxyz0123456789");
+        assert_eq!(urlencoding_encode("a-b_c.d~e"), "a-b_c.d~e");
+    }
+
+    #[test]
+    fn encode_spaces() {
+        assert_eq!(urlencoding_encode("hello world"), "hello%20world");
+        assert_eq!(urlencoding_encode(" "), "%20");
+    }
+
+    #[test]
+    fn encode_special_chars() {
+        assert_eq!(urlencoding_encode("a&b=c"), "a%26b%3Dc");
+        assert_eq!(urlencoding_encode("foo@bar"), "foo%40bar");
+        assert_eq!(urlencoding_encode("100%"), "100%25");
+        assert_eq!(urlencoding_encode("a+b"), "a%2Bb");
+    }
+
+    #[test]
+    fn encode_unicode() {
+        // "café" => "caf%C3%A9" (UTF-8 bytes for é are 0xC3, 0xA9)
+        assert_eq!(urlencoding_encode("café"), "caf%C3%A9");
+        // "日本" => multi-byte UTF-8
+        let encoded = urlencoding_encode("日本");
+        assert!(encoded.contains("%"));
+        assert!(!encoded.contains("日"));
+    }
+}

@@ -319,3 +319,382 @@ impl Database {
 }
 
 use rusqlite::OptionalExtension;
+
+#[cfg(test)]
+mod tests {
+    use crate::db::Database;
+    use crate::models::environment::*;
+    use rusqlite::Connection;
+
+    fn setup_test_db() -> (Database, String) {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch("PRAGMA foreign_keys=ON;").unwrap();
+        let db = Database { conn };
+        db.run_migrations().unwrap();
+        let workspace = db.get_current_workspace().unwrap();
+        (db, workspace.id)
+    }
+
+    #[test]
+    fn create_and_list_environments() {
+        let (db, wid) = setup_test_db();
+
+        db.create_environment(&CreateEnvironmentInput {
+            workspace_id: wid.clone(),
+            name: "Production".to_string(),
+        })
+        .unwrap();
+        db.create_environment(&CreateEnvironmentInput {
+            workspace_id: wid.clone(),
+            name: "Staging".to_string(),
+        })
+        .unwrap();
+
+        let envs = db.list_environments(&wid).unwrap();
+        assert_eq!(envs.len(), 2);
+        assert_eq!(envs[0].name, "Production");
+        assert_eq!(envs[1].name, "Staging");
+        assert!(!envs[0].is_active);
+    }
+
+    #[test]
+    fn get_environment() {
+        let (db, wid) = setup_test_db();
+        let env = db
+            .create_environment(&CreateEnvironmentInput {
+                workspace_id: wid.clone(),
+                name: "Dev".to_string(),
+            })
+            .unwrap();
+
+        let fetched = db.get_environment(&env.id).unwrap().unwrap();
+        assert_eq!(fetched.name, "Dev");
+        assert_eq!(fetched.workspace_id, wid);
+    }
+
+    #[test]
+    fn get_environment_not_found() {
+        let (db, _) = setup_test_db();
+        let result = db.get_environment("nonexistent").unwrap();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn set_active_environment() {
+        let (db, wid) = setup_test_db();
+        let env1 = db
+            .create_environment(&CreateEnvironmentInput {
+                workspace_id: wid.clone(),
+                name: "Env1".to_string(),
+            })
+            .unwrap();
+        let env2 = db
+            .create_environment(&CreateEnvironmentInput {
+                workspace_id: wid.clone(),
+                name: "Env2".to_string(),
+            })
+            .unwrap();
+
+        db.set_active_environment(&env1.id, &wid).unwrap();
+        let envs = db.list_environments(&wid).unwrap();
+        assert!(envs.iter().find(|e| e.id == env1.id).unwrap().is_active);
+        assert!(!envs.iter().find(|e| e.id == env2.id).unwrap().is_active);
+
+        // Switching to env2 deactivates env1
+        db.set_active_environment(&env2.id, &wid).unwrap();
+        let envs = db.list_environments(&wid).unwrap();
+        assert!(!envs.iter().find(|e| e.id == env1.id).unwrap().is_active);
+        assert!(envs.iter().find(|e| e.id == env2.id).unwrap().is_active);
+    }
+
+    #[test]
+    fn deactivate_all_environments() {
+        let (db, wid) = setup_test_db();
+        let env = db
+            .create_environment(&CreateEnvironmentInput {
+                workspace_id: wid.clone(),
+                name: "Env".to_string(),
+            })
+            .unwrap();
+
+        db.set_active_environment(&env.id, &wid).unwrap();
+        db.deactivate_all_environments(&wid).unwrap();
+
+        let envs = db.list_environments(&wid).unwrap();
+        assert!(envs.iter().all(|e| !e.is_active));
+    }
+
+    #[test]
+    fn update_environment_name() {
+        let (db, wid) = setup_test_db();
+        let env = db
+            .create_environment(&CreateEnvironmentInput {
+                workspace_id: wid.clone(),
+                name: "Old".to_string(),
+            })
+            .unwrap();
+
+        let updated = db
+            .update_environment(&UpdateEnvironmentInput {
+                id: env.id.clone(),
+                name: Some("New".to_string()),
+                variables: None,
+            })
+            .unwrap();
+
+        assert_eq!(updated.name, "New");
+    }
+
+    #[test]
+    fn sync_variables_add() {
+        let (db, wid) = setup_test_db();
+        let env = db
+            .create_environment(&CreateEnvironmentInput {
+                workspace_id: wid.clone(),
+                name: "Env".to_string(),
+            })
+            .unwrap();
+
+        let vars = vec![Variable {
+            id: "".to_string(), // empty = new
+            environment_id: env.id.clone(),
+            key: "API_KEY".to_string(),
+            value: "secret123".to_string(),
+            is_secret: false,
+            enabled: true,
+            sort_order: 0,
+            created_at: String::new(),
+            updated_at: String::new(),
+        }];
+
+        let updated = db
+            .update_environment(&UpdateEnvironmentInput {
+                id: env.id.clone(),
+                name: None,
+                variables: Some(vars),
+            })
+            .unwrap();
+
+        assert_eq!(updated.variables.len(), 1);
+        assert_eq!(updated.variables[0].key, "API_KEY");
+        assert_eq!(updated.variables[0].value, "secret123");
+        assert!(!updated.variables[0].id.is_empty());
+    }
+
+    #[test]
+    fn sync_variables_update() {
+        let (db, wid) = setup_test_db();
+        let env = db
+            .create_environment(&CreateEnvironmentInput {
+                workspace_id: wid.clone(),
+                name: "Env".to_string(),
+            })
+            .unwrap();
+
+        // Add initial variable
+        let vars = vec![Variable {
+            id: "".to_string(),
+            environment_id: env.id.clone(),
+            key: "HOST".to_string(),
+            value: "localhost".to_string(),
+            is_secret: false,
+            enabled: true,
+            sort_order: 0,
+            created_at: String::new(),
+            updated_at: String::new(),
+        }];
+
+        let updated = db
+            .update_environment(&UpdateEnvironmentInput {
+                id: env.id.clone(),
+                name: None,
+                variables: Some(vars),
+            })
+            .unwrap();
+
+        let var_id = updated.variables[0].id.clone();
+
+        // Update the variable value
+        let updated_vars = vec![Variable {
+            id: var_id.clone(),
+            environment_id: env.id.clone(),
+            key: "HOST".to_string(),
+            value: "production.example.com".to_string(),
+            is_secret: false,
+            enabled: true,
+            sort_order: 0,
+            created_at: String::new(),
+            updated_at: String::new(),
+        }];
+
+        let result = db
+            .update_environment(&UpdateEnvironmentInput {
+                id: env.id.clone(),
+                name: None,
+                variables: Some(updated_vars),
+            })
+            .unwrap();
+
+        assert_eq!(result.variables.len(), 1);
+        assert_eq!(result.variables[0].value, "production.example.com");
+        assert_eq!(result.variables[0].id, var_id);
+    }
+
+    #[test]
+    fn sync_variables_delete() {
+        let (db, wid) = setup_test_db();
+        let env = db
+            .create_environment(&CreateEnvironmentInput {
+                workspace_id: wid.clone(),
+                name: "Env".to_string(),
+            })
+            .unwrap();
+
+        // Add two variables
+        let vars = vec![
+            Variable {
+                id: "".to_string(),
+                environment_id: env.id.clone(),
+                key: "A".to_string(),
+                value: "1".to_string(),
+                is_secret: false,
+                enabled: true,
+                sort_order: 0,
+                created_at: String::new(),
+                updated_at: String::new(),
+            },
+            Variable {
+                id: "".to_string(),
+                environment_id: env.id.clone(),
+                key: "B".to_string(),
+                value: "2".to_string(),
+                is_secret: false,
+                enabled: true,
+                sort_order: 1,
+                created_at: String::new(),
+                updated_at: String::new(),
+            },
+        ];
+
+        let updated = db
+            .update_environment(&UpdateEnvironmentInput {
+                id: env.id.clone(),
+                name: None,
+                variables: Some(vars),
+            })
+            .unwrap();
+
+        assert_eq!(updated.variables.len(), 2);
+
+        // Sync with only one variable (omit B to delete it)
+        let keep = vec![Variable {
+            id: updated.variables[0].id.clone(),
+            environment_id: env.id.clone(),
+            key: "A".to_string(),
+            value: "1".to_string(),
+            is_secret: false,
+            enabled: true,
+            sort_order: 0,
+            created_at: String::new(),
+            updated_at: String::new(),
+        }];
+
+        let result = db
+            .update_environment(&UpdateEnvironmentInput {
+                id: env.id.clone(),
+                name: None,
+                variables: Some(keep),
+            })
+            .unwrap();
+
+        assert_eq!(result.variables.len(), 1);
+        assert_eq!(result.variables[0].key, "A");
+    }
+
+    #[test]
+    fn sync_variables_with_secrets() {
+        let (db, wid) = setup_test_db();
+        let env = db
+            .create_environment(&CreateEnvironmentInput {
+                workspace_id: wid.clone(),
+                name: "Env".to_string(),
+            })
+            .unwrap();
+
+        let vars = vec![Variable {
+            id: "".to_string(),
+            environment_id: env.id.clone(),
+            key: "SECRET_KEY".to_string(),
+            value: "super-secret-value".to_string(),
+            is_secret: true,
+            enabled: true,
+            sort_order: 0,
+            created_at: String::new(),
+            updated_at: String::new(),
+        }];
+
+        let updated = db
+            .update_environment(&UpdateEnvironmentInput {
+                id: env.id.clone(),
+                name: None,
+                variables: Some(vars),
+            })
+            .unwrap();
+
+        // The stored value should be decrypted back to the original
+        assert_eq!(updated.variables[0].value, "super-secret-value");
+        assert!(updated.variables[0].is_secret);
+    }
+
+    #[test]
+    fn get_resolved_variables() {
+        let (db, wid) = setup_test_db();
+        let env = db
+            .create_environment(&CreateEnvironmentInput {
+                workspace_id: wid.clone(),
+                name: "Env".to_string(),
+            })
+            .unwrap();
+
+        // Add variables: one enabled, one disabled
+        let vars = vec![
+            Variable {
+                id: "".to_string(),
+                environment_id: env.id.clone(),
+                key: "ENABLED_VAR".to_string(),
+                value: "yes".to_string(),
+                is_secret: false,
+                enabled: true,
+                sort_order: 0,
+                created_at: String::new(),
+                updated_at: String::new(),
+            },
+            Variable {
+                id: "".to_string(),
+                environment_id: env.id.clone(),
+                key: "DISABLED_VAR".to_string(),
+                value: "no".to_string(),
+                is_secret: false,
+                enabled: false,
+                sort_order: 1,
+                created_at: String::new(),
+                updated_at: String::new(),
+            },
+        ];
+
+        db.update_environment(&UpdateEnvironmentInput {
+            id: env.id.clone(),
+            name: None,
+            variables: Some(vars),
+        })
+        .unwrap();
+
+        // Activate the environment
+        db.set_active_environment(&env.id, &wid).unwrap();
+
+        let resolved = db.get_resolved_variables(&wid).unwrap();
+        assert_eq!(resolved.len(), 1);
+        assert_eq!(resolved[0].0, "ENABLED_VAR");
+        assert_eq!(resolved[0].1, "yes");
+    }
+}

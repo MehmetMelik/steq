@@ -1,4 +1,4 @@
-import type { KeyValue } from '@apiary/domain';
+import type { KeyValue } from '@reqtor/domain';
 
 interface ResponseHeadersProps {
   headers: KeyValue[];

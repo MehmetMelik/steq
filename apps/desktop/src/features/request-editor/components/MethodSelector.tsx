@@ -1,5 +1,5 @@
 import { cn } from '../../../lib/cn';
-import type { HttpMethod } from '@apiary/domain';
+import type { HttpMethod } from '@reqtor/domain';
 
 const METHODS: HttpMethod[] = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
 

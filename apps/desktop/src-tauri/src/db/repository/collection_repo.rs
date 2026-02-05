@@ -223,3 +223,335 @@ impl Database {
             .collect()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::db::Database;
+    use crate::models::collection::*;
+    use crate::models::request::*;
+    use rusqlite::Connection;
+
+    fn setup_test_db() -> (Database, String) {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch("PRAGMA foreign_keys=ON;").unwrap();
+        let db = Database { conn };
+        db.run_migrations().unwrap();
+        let workspace = db.get_current_workspace().unwrap();
+        (db, workspace.id)
+    }
+
+    #[test]
+    fn create_and_list_collections() {
+        let (db, wid) = setup_test_db();
+
+        db.create_collection(CreateCollectionInput {
+            workspace_id: wid.clone(),
+            name: "Beta".to_string(),
+            description: None,
+        })
+        .unwrap();
+        db.create_collection(CreateCollectionInput {
+            workspace_id: wid.clone(),
+            name: "Alpha".to_string(),
+            description: Some("Desc".to_string()),
+        })
+        .unwrap();
+
+        let list = db.list_collections(&wid).unwrap();
+        assert_eq!(list.len(), 2);
+        // Ordered by name ASC
+        assert_eq!(list[0].name, "Alpha");
+        assert_eq!(list[1].name, "Beta");
+        assert_eq!(list[0].description, Some("Desc".to_string()));
+    }
+
+    #[test]
+    fn rename_collection() {
+        let (db, wid) = setup_test_db();
+        let coll = db
+            .create_collection(CreateCollectionInput {
+                workspace_id: wid.clone(),
+                name: "Old Name".to_string(),
+                description: None,
+            })
+            .unwrap();
+
+        db.rename_collection(RenameInput {
+            id: coll.id.clone(),
+            name: "New Name".to_string(),
+        })
+        .unwrap();
+
+        let list = db.list_collections(&wid).unwrap();
+        assert_eq!(list[0].name, "New Name");
+    }
+
+    #[test]
+    fn delete_collection() {
+        let (db, wid) = setup_test_db();
+        let coll = db
+            .create_collection(CreateCollectionInput {
+                workspace_id: wid.clone(),
+                name: "To Delete".to_string(),
+                description: None,
+            })
+            .unwrap();
+
+        db.delete_collection(&coll.id).unwrap();
+        let list = db.list_collections(&wid).unwrap();
+        assert!(list.is_empty());
+    }
+
+    #[test]
+    fn create_folder_root_level() {
+        let (db, wid) = setup_test_db();
+        let coll = db
+            .create_collection(CreateCollectionInput {
+                workspace_id: wid,
+                name: "Coll".to_string(),
+                description: None,
+            })
+            .unwrap();
+
+        let folder = db
+            .create_folder(CreateFolderInput {
+                collection_id: coll.id.clone(),
+                parent_folder_id: None,
+                name: "Root Folder".to_string(),
+            })
+            .unwrap();
+
+        assert!(!folder.id.is_empty());
+        assert_eq!(folder.name, "Root Folder");
+        assert!(folder.parent_folder_id.is_none());
+    }
+
+    #[test]
+    fn create_nested_folder() {
+        let (db, wid) = setup_test_db();
+        let coll = db
+            .create_collection(CreateCollectionInput {
+                workspace_id: wid,
+                name: "Coll".to_string(),
+                description: None,
+            })
+            .unwrap();
+
+        let parent = db
+            .create_folder(CreateFolderInput {
+                collection_id: coll.id.clone(),
+                parent_folder_id: None,
+                name: "Parent".to_string(),
+            })
+            .unwrap();
+
+        let child = db
+            .create_folder(CreateFolderInput {
+                collection_id: coll.id.clone(),
+                parent_folder_id: Some(parent.id.clone()),
+                name: "Child".to_string(),
+            })
+            .unwrap();
+
+        assert_eq!(child.parent_folder_id.as_deref(), Some(parent.id.as_str()));
+    }
+
+    #[test]
+    fn rename_folder() {
+        let (db, wid) = setup_test_db();
+        let coll = db
+            .create_collection(CreateCollectionInput {
+                workspace_id: wid,
+                name: "Coll".to_string(),
+                description: None,
+            })
+            .unwrap();
+
+        let folder = db
+            .create_folder(CreateFolderInput {
+                collection_id: coll.id.clone(),
+                parent_folder_id: None,
+                name: "Old".to_string(),
+            })
+            .unwrap();
+
+        db.rename_folder(RenameInput {
+            id: folder.id.clone(),
+            name: "New".to_string(),
+        })
+        .unwrap();
+
+        let tree = db.get_collection_tree(&coll.id).unwrap();
+        assert_eq!(tree.root_folders[0].folder.name, "New");
+    }
+
+    #[test]
+    fn delete_folder() {
+        let (db, wid) = setup_test_db();
+        let coll = db
+            .create_collection(CreateCollectionInput {
+                workspace_id: wid,
+                name: "Coll".to_string(),
+                description: None,
+            })
+            .unwrap();
+
+        let folder = db
+            .create_folder(CreateFolderInput {
+                collection_id: coll.id.clone(),
+                parent_folder_id: None,
+                name: "Folder".to_string(),
+            })
+            .unwrap();
+
+        db.delete_folder(&folder.id).unwrap();
+        let tree = db.get_collection_tree(&coll.id).unwrap();
+        assert!(tree.root_folders.is_empty());
+    }
+
+    #[test]
+    fn get_collection_tree_empty() {
+        let (db, wid) = setup_test_db();
+        let coll = db
+            .create_collection(CreateCollectionInput {
+                workspace_id: wid,
+                name: "Empty".to_string(),
+                description: None,
+            })
+            .unwrap();
+
+        let tree = db.get_collection_tree(&coll.id).unwrap();
+        assert_eq!(tree.collection.name, "Empty");
+        assert!(tree.root_folders.is_empty());
+        assert!(tree.root_requests.is_empty());
+    }
+
+    #[test]
+    fn get_collection_tree_with_structure() {
+        let (db, wid) = setup_test_db();
+        let coll = db
+            .create_collection(CreateCollectionInput {
+                workspace_id: wid,
+                name: "Full".to_string(),
+                description: None,
+            })
+            .unwrap();
+
+        // Root folder with a nested folder
+        let root_folder = db
+            .create_folder(CreateFolderInput {
+                collection_id: coll.id.clone(),
+                parent_folder_id: None,
+                name: "Auth".to_string(),
+            })
+            .unwrap();
+
+        let nested_folder = db
+            .create_folder(CreateFolderInput {
+                collection_id: coll.id.clone(),
+                parent_folder_id: Some(root_folder.id.clone()),
+                name: "OAuth".to_string(),
+            })
+            .unwrap();
+
+        // Root-level request (no folder)
+        db.create_request(CreateRequestInput {
+            name: "Health Check".to_string(),
+            method: HttpMethod::GET,
+            url: "https://api.example.com/health".to_string(),
+            headers: vec![],
+            query_params: vec![],
+            body_type: BodyType::None,
+            body_content: None,
+            collection_id: Some(coll.id.clone()),
+            folder_id: None,
+        })
+        .unwrap();
+
+        // Request in root folder
+        db.create_request(CreateRequestInput {
+            name: "Login".to_string(),
+            method: HttpMethod::POST,
+            url: "https://api.example.com/login".to_string(),
+            headers: vec![],
+            query_params: vec![],
+            body_type: BodyType::Json,
+            body_content: Some("{\"user\":\"test\"}".to_string()),
+            collection_id: Some(coll.id.clone()),
+            folder_id: Some(root_folder.id.clone()),
+        })
+        .unwrap();
+
+        // Request in nested folder
+        db.create_request(CreateRequestInput {
+            name: "Token".to_string(),
+            method: HttpMethod::POST,
+            url: "https://api.example.com/oauth/token".to_string(),
+            headers: vec![],
+            query_params: vec![],
+            body_type: BodyType::FormUrlEncoded,
+            body_content: Some("grant_type=client_credentials".to_string()),
+            collection_id: Some(coll.id.clone()),
+            folder_id: Some(nested_folder.id.clone()),
+        })
+        .unwrap();
+
+        let tree = db.get_collection_tree(&coll.id).unwrap();
+        assert_eq!(tree.root_requests.len(), 1);
+        assert_eq!(tree.root_requests[0].name, "Health Check");
+
+        assert_eq!(tree.root_folders.len(), 1);
+        assert_eq!(tree.root_folders[0].folder.name, "Auth");
+        assert_eq!(tree.root_folders[0].requests.len(), 1);
+        assert_eq!(tree.root_folders[0].requests[0].name, "Login");
+
+        assert_eq!(tree.root_folders[0].children.len(), 1);
+        assert_eq!(tree.root_folders[0].children[0].folder.name, "OAuth");
+        assert_eq!(tree.root_folders[0].children[0].requests.len(), 1);
+        assert_eq!(tree.root_folders[0].children[0].requests[0].name, "Token");
+    }
+
+    #[test]
+    fn delete_collection_cascades() {
+        let (db, wid) = setup_test_db();
+        let coll = db
+            .create_collection(CreateCollectionInput {
+                workspace_id: wid.clone(),
+                name: "Cascade".to_string(),
+                description: None,
+            })
+            .unwrap();
+
+        let folder = db
+            .create_folder(CreateFolderInput {
+                collection_id: coll.id.clone(),
+                parent_folder_id: None,
+                name: "Folder".to_string(),
+            })
+            .unwrap();
+
+        db.create_request(CreateRequestInput {
+            name: "Req".to_string(),
+            method: HttpMethod::GET,
+            url: "https://example.com".to_string(),
+            headers: vec![],
+            query_params: vec![],
+            body_type: BodyType::None,
+            body_content: None,
+            collection_id: Some(coll.id.clone()),
+            folder_id: Some(folder.id.clone()),
+        })
+        .unwrap();
+
+        db.delete_collection(&coll.id).unwrap();
+
+        // Collection gone
+        let colls = db.list_collections(&wid).unwrap();
+        assert!(colls.is_empty());
+
+        // Folders cascade-deleted; requests set to NULL collection
+        // Since folder is deleted, request's folder_id is SET NULL, and collection_id is SET NULL
+        let all_requests = db.list_requests_by_collection(&coll.id).unwrap();
+        assert!(all_requests.is_empty());
+    }
+}

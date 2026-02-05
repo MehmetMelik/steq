@@ -5,7 +5,7 @@ import { useResponseStore } from '../../response-viewer/store/response.store';
 import { useTabsStore } from '../../tabs/store/tabs.store';
 import { useEnvironmentsStore } from '../../environments/store/environments.store';
 import { ipc } from '../../../lib/ipc-client';
-import { resolveRequestVariables } from '@apiary/domain';
+import { resolveRequestVariables } from '@reqtor/domain';
 import { MethodSelector } from './MethodSelector';
 import { UrlBar } from './UrlBar';
 import { SendButton } from './SendButton';

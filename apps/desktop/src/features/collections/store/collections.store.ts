@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Collection, CollectionTree } from '@apiary/domain';
+import type { Collection, CollectionTree } from '@reqtor/domain';
 import { ipc } from '../../../lib/ipc-client';
 
 interface CollectionsState {

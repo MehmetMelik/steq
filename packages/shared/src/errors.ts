@@ -1,14 +1,14 @@
-export class ApiaryError extends Error {
+export class ReqtorError extends Error {
   constructor(
     message: string,
     public readonly code: string,
   ) {
     super(message);
-    this.name = 'ApiaryError';
+    this.name = 'ReqtorError';
   }
 }
 
-export class IpcError extends ApiaryError {
+export class IpcError extends ReqtorError {
   constructor(message: string) {
     super(message, 'IPC_ERROR');
     this.name = 'IpcError';

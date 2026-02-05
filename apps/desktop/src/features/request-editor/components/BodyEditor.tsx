@@ -1,5 +1,5 @@
 import { cn } from '../../../lib/cn';
-import type { BodyType } from '@apiary/domain';
+import type { BodyType } from '@reqtor/domain';
 
 const BODY_TYPES: { label: string; value: BodyType }[] = [
   { label: 'None', value: 'none' },

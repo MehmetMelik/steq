@@ -204,3 +204,203 @@ impl Database {
 }
 
 use rusqlite::OptionalExtension;
+
+#[cfg(test)]
+mod tests {
+    use crate::db::Database;
+    use crate::models::request::*;
+    use rusqlite::Connection;
+
+    fn setup_test_db() -> (Database, String) {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch("PRAGMA foreign_keys=ON;").unwrap();
+        let db = Database { conn };
+        db.run_migrations().unwrap();
+        let workspace = db.get_current_workspace().unwrap();
+        (db, workspace.id)
+    }
+
+    fn make_collection(db: &Database, workspace_id: &str) -> String {
+        let coll = db
+            .create_collection(crate::models::collection::CreateCollectionInput {
+                workspace_id: workspace_id.to_string(),
+                name: "Test Collection".to_string(),
+                description: None,
+            })
+            .unwrap();
+        coll.id
+    }
+
+    fn sample_input(collection_id: &str) -> CreateRequestInput {
+        CreateRequestInput {
+            name: "Get Users".to_string(),
+            method: HttpMethod::GET,
+            url: "https://api.example.com/users".to_string(),
+            headers: vec![KeyValue {
+                key: "Authorization".to_string(),
+                value: "Bearer token123".to_string(),
+                enabled: true,
+            }],
+            query_params: vec![KeyValue {
+                key: "page".to_string(),
+                value: "1".to_string(),
+                enabled: true,
+            }],
+            body_type: BodyType::None,
+            body_content: None,
+            collection_id: Some(collection_id.to_string()),
+            folder_id: None,
+        }
+    }
+
+    #[test]
+    fn create_and_get_request() {
+        let (db, wid) = setup_test_db();
+        let cid = make_collection(&db, &wid);
+        let input = sample_input(&cid);
+
+        let created = db.create_request(input).unwrap();
+        assert!(!created.id.is_empty());
+        assert_eq!(created.name, "Get Users");
+        assert_eq!(created.headers.len(), 1);
+        assert_eq!(created.headers[0].key, "Authorization");
+        assert_eq!(created.query_params.len(), 1);
+        assert_eq!(created.query_params[0].key, "page");
+
+        let fetched = db.get_request(&created.id).unwrap().unwrap();
+        assert_eq!(fetched.id, created.id);
+        assert_eq!(fetched.name, "Get Users");
+        assert_eq!(fetched.headers.len(), 1);
+        assert_eq!(fetched.headers[0].value, "Bearer token123");
+        assert_eq!(fetched.query_params.len(), 1);
+        assert_eq!(fetched.query_params[0].value, "1");
+    }
+
+    #[test]
+    fn get_request_not_found() {
+        let (db, _) = setup_test_db();
+        let result = db.get_request("nonexistent-id").unwrap();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn update_request_partial() {
+        let (db, wid) = setup_test_db();
+        let cid = make_collection(&db, &wid);
+        let created = db.create_request(sample_input(&cid)).unwrap();
+
+        let update = UpdateRequestInput {
+            id: created.id.clone(),
+            name: Some("Updated Name".to_string()),
+            method: Some(HttpMethod::POST),
+            url: None,
+            headers: None,
+            query_params: None,
+            body_type: None,
+            body_content: None,
+            collection_id: None,
+            folder_id: None,
+            sort_order: None,
+        };
+
+        let updated = db.update_request(update).unwrap();
+        assert_eq!(updated.name, "Updated Name");
+        assert!(matches!(updated.method, HttpMethod::POST));
+        // Unchanged fields preserved
+        assert_eq!(updated.url, "https://api.example.com/users");
+        assert_eq!(updated.headers.len(), 1);
+    }
+
+    #[test]
+    fn update_request_not_found() {
+        let (db, _) = setup_test_db();
+        let update = UpdateRequestInput {
+            id: "nonexistent".to_string(),
+            name: Some("x".to_string()),
+            method: None,
+            url: None,
+            headers: None,
+            query_params: None,
+            body_type: None,
+            body_content: None,
+            collection_id: None,
+            folder_id: None,
+            sort_order: None,
+        };
+        let result = db.update_request(update);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn delete_request() {
+        let (db, wid) = setup_test_db();
+        let cid = make_collection(&db, &wid);
+        let created = db.create_request(sample_input(&cid)).unwrap();
+
+        db.delete_request(&created.id).unwrap();
+        assert!(db.get_request(&created.id).unwrap().is_none());
+    }
+
+    #[test]
+    fn list_requests_by_collection() {
+        let (db, wid) = setup_test_db();
+        let cid = make_collection(&db, &wid);
+
+        let mut input1 = sample_input(&cid);
+        input1.name = "Alpha".to_string();
+        let mut input2 = sample_input(&cid);
+        input2.name = "Beta".to_string();
+
+        db.create_request(input1).unwrap();
+        db.create_request(input2).unwrap();
+
+        let list = db.list_requests_by_collection(&cid).unwrap();
+        assert_eq!(list.len(), 2);
+        // Both belong to the same collection
+        assert!(list.iter().all(|r| r.collection_id.as_deref() == Some(&cid)));
+    }
+
+    #[test]
+    fn list_requests_empty_collection() {
+        let (db, wid) = setup_test_db();
+        let cid = make_collection(&db, &wid);
+        let list = db.list_requests_by_collection(&cid).unwrap();
+        assert!(list.is_empty());
+    }
+
+    #[test]
+    fn request_with_all_body_types() {
+        let (db, wid) = setup_test_db();
+        let cid = make_collection(&db, &wid);
+
+        let body_types = vec![
+            (BodyType::None, None),
+            (BodyType::Json, Some("{\"key\":\"val\"}".to_string())),
+            (BodyType::Text, Some("plain text".to_string())),
+            (
+                BodyType::FormUrlEncoded,
+                Some("foo=bar&baz=qux".to_string()),
+            ),
+            (BodyType::Multipart, Some("multipart data".to_string())),
+        ];
+
+        for (bt, content) in body_types {
+            let bt_str = bt.as_str().to_string();
+            let input = CreateRequestInput {
+                name: format!("Req {}", bt_str),
+                method: HttpMethod::POST,
+                url: "https://example.com".to_string(),
+                headers: vec![],
+                query_params: vec![],
+                body_type: bt,
+                body_content: content.clone(),
+                collection_id: Some(cid.clone()),
+                folder_id: None,
+            };
+            let created = db.create_request(input).unwrap();
+            let fetched = db.get_request(&created.id).unwrap().unwrap();
+            assert_eq!(fetched.body_type.as_str(), bt_str);
+            assert_eq!(fetched.body_content, content);
+        }
+    }
+}

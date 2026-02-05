@@ -240,7 +240,7 @@ fn import_items(
     Ok(())
 }
 
-/// Exports an Apiary collection to Postman v2.1 JSON format.
+/// Exports a Reqtor collection to Postman v2.1 JSON format.
 pub fn export_postman_collection(
     db: &Database,
     collection_id: &str,
@@ -337,4 +337,326 @@ fn build_postman_items(
     }
 
     items
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db::Database;
+    use rusqlite::Connection;
+
+    fn setup_test_db() -> (Database, String) {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch("PRAGMA foreign_keys=ON;").unwrap();
+        let db = Database { conn };
+        db.run_migrations().unwrap();
+        let workspace = db.get_current_workspace().unwrap();
+        (db, workspace.id)
+    }
+
+    #[test]
+    fn import_simple_collection() {
+        let (db, wid) = setup_test_db();
+        let json = r#"{
+            "info": { "name": "Simple API" },
+            "item": [
+                {
+                    "name": "Get Users",
+                    "request": {
+                        "method": "GET",
+                        "url": "https://api.example.com/users",
+                        "header": []
+                    }
+                },
+                {
+                    "name": "Create User",
+                    "request": {
+                        "method": "POST",
+                        "url": "https://api.example.com/users",
+                        "header": []
+                    }
+                }
+            ]
+        }"#;
+
+        let result = import_postman_collection(&db, json, &wid).unwrap();
+        assert_eq!(result.collection_name, "Simple API");
+        assert_eq!(result.request_count, 2);
+        assert_eq!(result.folder_count, 0);
+    }
+
+    #[test]
+    fn import_with_folders() {
+        let (db, wid) = setup_test_db();
+        let json = r#"{
+            "info": { "name": "Folder API" },
+            "item": [
+                {
+                    "name": "Auth",
+                    "item": [
+                        {
+                            "name": "Login",
+                            "request": {
+                                "method": "POST",
+                                "url": "https://api.example.com/login",
+                                "header": []
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Health",
+                    "request": {
+                        "method": "GET",
+                        "url": "https://api.example.com/health",
+                        "header": []
+                    }
+                }
+            ]
+        }"#;
+
+        let result = import_postman_collection(&db, json, &wid).unwrap();
+        assert_eq!(result.folder_count, 1);
+        assert_eq!(result.request_count, 2);
+    }
+
+    #[test]
+    fn import_nested_folders() {
+        let (db, wid) = setup_test_db();
+        let json = r#"{
+            "info": { "name": "Nested" },
+            "item": [
+                {
+                    "name": "Level 1",
+                    "item": [
+                        {
+                            "name": "Level 2",
+                            "item": [
+                                {
+                                    "name": "Deep Request",
+                                    "request": {
+                                        "method": "GET",
+                                        "url": "https://example.com/deep",
+                                        "header": []
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }"#;
+
+        let result = import_postman_collection(&db, json, &wid).unwrap();
+        assert_eq!(result.folder_count, 2);
+        assert_eq!(result.request_count, 1);
+    }
+
+    #[test]
+    fn import_request_body_modes() {
+        let (db, wid) = setup_test_db();
+        let json = r#"{
+            "info": { "name": "Body Modes" },
+            "item": [
+                {
+                    "name": "JSON Body",
+                    "request": {
+                        "method": "POST",
+                        "url": "https://example.com",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"key\":\"value\"}",
+                            "options": { "raw": { "language": "json" } }
+                        }
+                    }
+                },
+                {
+                    "name": "Text Body",
+                    "request": {
+                        "method": "POST",
+                        "url": "https://example.com",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "plain text",
+                            "options": { "raw": { "language": "text" } }
+                        }
+                    }
+                },
+                {
+                    "name": "Urlencoded",
+                    "request": {
+                        "method": "POST",
+                        "url": "https://example.com",
+                        "header": [],
+                        "body": {
+                            "mode": "urlencoded",
+                            "raw": "foo=bar"
+                        }
+                    }
+                },
+                {
+                    "name": "No Body",
+                    "request": {
+                        "method": "GET",
+                        "url": "https://example.com",
+                        "header": []
+                    }
+                }
+            ]
+        }"#;
+
+        let result = import_postman_collection(&db, json, &wid).unwrap();
+        assert_eq!(result.request_count, 4);
+
+        // Verify collection was created and check the tree
+        let colls = db.list_collections(&wid).unwrap();
+        let tree = db.get_collection_tree(&colls[0].id).unwrap();
+        assert_eq!(tree.root_requests.len(), 4);
+    }
+
+    #[test]
+    fn import_headers_and_query_params() {
+        let (db, wid) = setup_test_db();
+        let json = r#"{
+            "info": { "name": "Params" },
+            "item": [
+                {
+                    "name": "With Headers",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "https://api.example.com/users?page=1",
+                            "query": [
+                                { "key": "page", "value": "1" },
+                                { "key": "disabled_param", "value": "x", "disabled": true }
+                            ]
+                        },
+                        "header": [
+                            { "key": "Authorization", "value": "Bearer token" },
+                            { "key": "X-Disabled", "value": "val", "disabled": true }
+                        ]
+                    }
+                }
+            ]
+        }"#;
+
+        let result = import_postman_collection(&db, json, &wid).unwrap();
+        assert_eq!(result.request_count, 1);
+
+        let colls = db.list_collections(&wid).unwrap();
+        let tree = db.get_collection_tree(&colls[0].id).unwrap();
+        let req = &tree.root_requests[0];
+
+        assert_eq!(req.headers.len(), 2);
+        assert!(req.headers[0].enabled);
+        assert!(!req.headers[1].enabled);
+
+        assert_eq!(req.query_params.len(), 2);
+        assert!(req.query_params[0].enabled);
+        assert!(!req.query_params[1].enabled);
+    }
+
+    #[test]
+    fn import_simple_url_string() {
+        let (db, wid) = setup_test_db();
+        let json = r#"{
+            "info": { "name": "Simple URL" },
+            "item": [
+                {
+                    "name": "Simple",
+                    "request": {
+                        "method": "GET",
+                        "url": "https://example.com/simple",
+                        "header": []
+                    }
+                }
+            ]
+        }"#;
+
+        let result = import_postman_collection(&db, json, &wid).unwrap();
+        assert_eq!(result.request_count, 1);
+
+        let colls = db.list_collections(&wid).unwrap();
+        let tree = db.get_collection_tree(&colls[0].id).unwrap();
+        assert_eq!(tree.root_requests[0].url, "https://example.com/simple");
+    }
+
+    #[test]
+    fn import_invalid_json() {
+        let (db, wid) = setup_test_db();
+        let result = import_postman_collection(&db, "not valid json {{{", &wid);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn export_roundtrip() {
+        let (db, wid) = setup_test_db();
+
+        // Import a collection
+        let json = r#"{
+            "info": { "name": "Roundtrip" },
+            "item": [
+                {
+                    "name": "Auth",
+                    "item": [
+                        {
+                            "name": "Login",
+                            "request": {
+                                "method": "POST",
+                                "url": "https://api.example.com/login",
+                                "header": [
+                                    { "key": "Content-Type", "value": "application/json" }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\"user\":\"test\"}",
+                                    "options": { "raw": { "language": "json" } }
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Users",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "https://api.example.com/users",
+                            "query": [{ "key": "limit", "value": "10" }]
+                        },
+                        "header": []
+                    }
+                }
+            ]
+        }"#;
+
+        let import_result = import_postman_collection(&db, json, &wid).unwrap();
+        let colls = db.list_collections(&wid).unwrap();
+        let coll_id = &colls[0].id;
+
+        // Export
+        let exported = export_postman_collection(&db, coll_id).unwrap();
+        let parsed: serde_json::Value = serde_json::from_str(&exported).unwrap();
+
+        assert_eq!(parsed["info"]["name"], "Roundtrip");
+        let items = parsed["item"].as_array().unwrap();
+        // Should have a folder + a request
+        assert_eq!(items.len(), 2);
+
+        // Folder "Auth" with 1 request
+        let folder_item = items.iter().find(|i| i["name"] == "Auth").unwrap();
+        let folder_children = folder_item["item"].as_array().unwrap();
+        assert_eq!(folder_children.len(), 1);
+        assert_eq!(folder_children[0]["name"], "Login");
+        assert_eq!(folder_children[0]["request"]["method"], "POST");
+
+        // Root request
+        let req_item = items.iter().find(|i| i["name"] == "Get Users").unwrap();
+        assert_eq!(req_item["request"]["method"], "GET");
+
+        assert_eq!(import_result.request_count, 2);
+        assert_eq!(import_result.folder_count, 1);
+    }
 }

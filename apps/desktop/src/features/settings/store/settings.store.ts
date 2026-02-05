@@ -26,7 +26,7 @@ export const useSettingsStore = create<SettingsState>()(
         set((s) => ({ theme: s.theme === 'dark' ? 'light' : 'dark' })),
     }),
     {
-      name: 'apiary-settings',
+      name: 'reqtor-settings',
     },
   ),
 );
