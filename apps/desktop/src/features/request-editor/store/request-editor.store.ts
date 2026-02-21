@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import type { HttpMethod, BodyType, KeyValue, ApiRequest } from '@steq/domain';
+import type { HttpMethod, BodyType, KeyValue, ApiRequest, AuthType, AuthConfig, RequestSettings } from '@steq/domain';
+import { DEFAULT_REQUEST_SETTINGS } from '@steq/domain';
 
 export interface RequestDraft {
   id: string | null;
@@ -10,6 +11,9 @@ export interface RequestDraft {
   queryParams: KeyValue[];
   bodyType: BodyType;
   bodyContent: string;
+  authType: AuthType;
+  authConfig: AuthConfig;
+  settings: RequestSettings;
   collectionId: string | null;
   folderId: string | null;
   dirty: boolean;
@@ -25,6 +29,9 @@ export function createEmptyDraft(): RequestDraft {
     queryParams: [{ key: '', value: '', enabled: true }],
     bodyType: 'none',
     bodyContent: '',
+    authType: 'none',
+    authConfig: { type: 'none' },
+    settings: { ...DEFAULT_REQUEST_SETTINGS },
     collectionId: null,
     folderId: null,
     dirty: false,
@@ -47,6 +54,9 @@ export function requestToDraft(request: ApiRequest): RequestDraft {
         : [{ key: '', value: '', enabled: true }],
     bodyType: request.body_type,
     bodyContent: request.body_content ?? '',
+    authType: request.auth_type,
+    authConfig: request.auth_config,
+    settings: { ...DEFAULT_REQUEST_SETTINGS },
     collectionId: request.collection_id,
     folderId: request.folder_id,
     dirty: false,

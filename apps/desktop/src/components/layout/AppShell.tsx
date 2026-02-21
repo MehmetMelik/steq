@@ -141,6 +141,9 @@ export function AppShell() {
         queryParams: snapshot.query_params ?? [{ key: '', value: '', enabled: true }],
         bodyType: snapshot.body_type ?? 'none',
         bodyContent: snapshot.body_content ?? '',
+        authType: snapshot.auth_type ?? 'none',
+        authConfig: snapshot.auth_config ?? { type: 'none' },
+        settings: snapshot.settings ?? { timeout_ms: 30000, follow_redirects: true, max_redirects: 10 },
       };
       initEditorTab(tabId, draft);
     } catch {
@@ -166,6 +169,8 @@ export function AppShell() {
         query_params: filteredParams,
         body_type: draft.bodyType,
         body_content: draft.bodyType !== 'none' ? draft.bodyContent : null,
+        auth_type: draft.authType,
+        auth_config: draft.authConfig,
         collection_id: collectionId,
         folder_id: folderId,
       });
@@ -180,6 +185,8 @@ export function AppShell() {
         query_params: filteredParams,
         body_type: draft.bodyType,
         body_content: draft.bodyType !== 'none' ? draft.bodyContent : null,
+        auth_type: draft.authType,
+        auth_config: draft.authConfig,
         collection_id: collectionId,
         folder_id: folderId,
       });

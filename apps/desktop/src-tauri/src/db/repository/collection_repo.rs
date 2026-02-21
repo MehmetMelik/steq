@@ -168,7 +168,7 @@ impl Database {
         let mut req_stmt = self
             .conn
             .prepare(
-                "SELECT id, collection_id, folder_id, name, method, url, headers, query_params, body_type, body_content, sort_order, created_at, updated_at
+                "SELECT id, collection_id, folder_id, name, method, url, headers, query_params, body_type, body_content, auth_type, auth_config, sort_order, created_at, updated_at
                  FROM requests WHERE collection_id = ?1 ORDER BY sort_order ASC, name ASC",
             )
             .map_err(|e| format!("Prepare list_requests_tree: {}", e))?;
@@ -463,6 +463,8 @@ mod tests {
             query_params: vec![],
             body_type: BodyType::None,
             body_content: None,
+            auth_type: AuthType::None,
+            auth_config: AuthConfig::None,
             collection_id: Some(coll.id.clone()),
             folder_id: None,
         })
@@ -477,6 +479,8 @@ mod tests {
             query_params: vec![],
             body_type: BodyType::Json,
             body_content: Some("{\"user\":\"test\"}".to_string()),
+            auth_type: AuthType::None,
+            auth_config: AuthConfig::None,
             collection_id: Some(coll.id.clone()),
             folder_id: Some(root_folder.id.clone()),
         })
@@ -491,6 +495,8 @@ mod tests {
             query_params: vec![],
             body_type: BodyType::FormUrlEncoded,
             body_content: Some("grant_type=client_credentials".to_string()),
+            auth_type: AuthType::None,
+            auth_config: AuthConfig::None,
             collection_id: Some(coll.id.clone()),
             folder_id: Some(nested_folder.id.clone()),
         })
@@ -538,6 +544,8 @@ mod tests {
             query_params: vec![],
             body_type: BodyType::None,
             body_content: None,
+            auth_type: AuthType::None,
+            auth_config: AuthConfig::None,
             collection_id: Some(coll.id.clone()),
             folder_id: Some(folder.id.clone()),
         })

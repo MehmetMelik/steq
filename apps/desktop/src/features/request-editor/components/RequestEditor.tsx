@@ -14,6 +14,8 @@ import { HeadersEditor } from './HeadersEditor';
 import { QueryParamsEditor } from './QueryParamsEditor';
 import { BodyEditor } from './BodyEditor';
 import { CopyAsButton } from './CopyAsButton';
+import { AuthEditor } from './AuthEditor';
+import { SettingsEditor } from './SettingsEditor';
 
 const EMPTY_GRAPHQL_CONTENT = JSON.stringify({
   query: '',
@@ -21,7 +23,7 @@ const EMPTY_GRAPHQL_CONTENT = JSON.stringify({
   operationName: '',
 });
 
-type EditorTab = 'headers' | 'params' | 'body';
+type EditorTab = 'params' | 'headers' | 'body' | 'auth' | 'settings';
 
 interface RequestEditorProps {
   tabId: string;
@@ -59,6 +61,9 @@ export function RequestEditor({ tabId, workspaceId }: RequestEditorProps) {
         query_params: draft.queryParams.filter((q) => q.key.trim() !== ''),
         body_type: draft.bodyType,
         body_content: draft.bodyType !== 'none' ? draft.bodyContent : null,
+        auth_type: draft.authType,
+        auth_config: draft.authConfig,
+        settings: draft.settings,
       };
       // Resolve environment variables before sending
       const resolvedInput = resolveRequestVariables(rawInput, resolvedVariables);
@@ -90,6 +95,8 @@ export function RequestEditor({ tabId, workspaceId }: RequestEditorProps) {
       query_params: filteredParams,
       body_type: draft.bodyType,
       body_content: draft.bodyType !== 'none' ? draft.bodyContent : null,
+      auth_type: draft.authType,
+      auth_config: draft.authConfig,
     });
     markSaved(tabId, draft.id, draft.collectionId, draft.folderId);
   }, [tabId, draft, markSaved]);
@@ -109,6 +116,8 @@ export function RequestEditor({ tabId, workspaceId }: RequestEditorProps) {
     { id: 'params', label: 'Params' },
     { id: 'headers', label: 'Headers' },
     { id: 'body', label: 'Body' },
+    { id: 'auth', label: 'Auth' },
+    { id: 'settings', label: 'Settings' },
   ];
 
   return (
@@ -201,6 +210,24 @@ export function RequestEditor({ tabId, workspaceId }: RequestEditorProps) {
               setDraftField(tabId, updates);
             }}
             onContentChange={(bodyContent) => setDraftField(tabId, { bodyContent })}
+          />
+        )}
+        {activeTab === 'auth' && (
+          <AuthEditor
+            authType={draft.authType}
+            authConfig={draft.authConfig}
+            onTypeChange={(authType, authConfig) =>
+              setDraftField(tabId, { authType, authConfig })
+            }
+            onConfigChange={(authConfig) =>
+              setDraftField(tabId, { authConfig })
+            }
+          />
+        )}
+        {activeTab === 'settings' && (
+          <SettingsEditor
+            settings={draft.settings}
+            onChange={(settings) => setDraftField(tabId, { settings })}
           />
         )}
       </div>

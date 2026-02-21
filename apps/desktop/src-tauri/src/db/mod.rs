@@ -23,6 +23,9 @@ impl Database {
             .execute_batch(schema::CREATE_TABLES)
             .map_err(|e| format!("Failed to run migrations: {}", e))?;
 
+        // Migration: add auth columns to requests table if missing (v0.6.0)
+        self.migrate_add_auth_columns()?;
+
         // Ensure a default workspace exists
         let count: i64 = self
             .conn
@@ -38,6 +41,24 @@ impl Database {
                     rusqlite::params![id, "Default Workspace", &now, &now],
                 )
                 .map_err(|e| format!("Failed to create default workspace: {}", e))?;
+        }
+
+        Ok(())
+    }
+
+    fn migrate_add_auth_columns(&self) -> Result<(), String> {
+        let has_auth_type: bool = self
+            .conn
+            .prepare("SELECT auth_type FROM requests LIMIT 0")
+            .is_ok();
+
+        if !has_auth_type {
+            self.conn
+                .execute_batch(
+                    "ALTER TABLE requests ADD COLUMN auth_type TEXT NOT NULL DEFAULT 'none';
+                     ALTER TABLE requests ADD COLUMN auth_config TEXT NOT NULL DEFAULT '{\"type\":\"none\"}';"
+                )
+                .map_err(|e| format!("Failed to add auth columns: {}", e))?;
         }
 
         Ok(())

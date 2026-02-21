@@ -57,6 +57,8 @@ CREATE TABLE IF NOT EXISTS requests (
     query_params TEXT NOT NULL DEFAULT '[]',
     body_type TEXT NOT NULL DEFAULT 'none',
     body_content TEXT,
+    auth_type TEXT NOT NULL DEFAULT 'none',
+    auth_config TEXT NOT NULL DEFAULT '{"type":"none"}',
     sort_order INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL

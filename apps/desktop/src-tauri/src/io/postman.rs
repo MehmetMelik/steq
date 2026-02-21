@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::db::Database;
-use crate::models::request::{BodyType, CreateRequestInput, HttpMethod, KeyValue};
+use crate::models::request::{AuthConfig, AuthType, BodyType, CreateRequestInput, HttpMethod, KeyValue};
 
 /// Postman Collection v2.1 format types
 #[derive(Debug, Deserialize)]
@@ -228,6 +228,8 @@ fn import_items(
                     query_params,
                     body_type,
                     body_content,
+                    auth_type: AuthType::None,
+                    auth_config: AuthConfig::None,
                     collection_id: Some(collection_id.to_string()),
                     folder_id: parent_folder_id.map(|s| s.to_string()),
                 };

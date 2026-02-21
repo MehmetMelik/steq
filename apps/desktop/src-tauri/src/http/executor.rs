@@ -4,8 +4,9 @@ use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use reqwest::Method;
 use serde::{Deserialize, Serialize};
 
+use base64::Engine;
 use crate::models::execution::{ExecutionResult, ExecutionTiming};
-use crate::models::request::{BodyType, ExecuteRequestInput, KeyValue};
+use crate::models::request::{AuthConfig, BodyType, ExecuteRequestInput, KeyValue};
 
 #[derive(Debug, Deserialize)]
 struct GraphQLInput {
@@ -53,9 +54,15 @@ fn build_graphql_body(content: &str) -> String {
 }
 
 pub async fn execute(input: &ExecuteRequestInput) -> ExecutionResult {
+    let redirect_policy = if input.settings.follow_redirects {
+        reqwest::redirect::Policy::limited(input.settings.max_redirects)
+    } else {
+        reqwest::redirect::Policy::none()
+    };
+
     let client = match reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(30))
-        .redirect(reqwest::redirect::Policy::limited(10))
+        .timeout(std::time::Duration::from_millis(input.settings.timeout_ms))
+        .redirect(redirect_policy)
         .build()
     {
         Ok(c) => c,
@@ -120,6 +127,9 @@ pub async fn execute(input: &ExecuteRequestInput) -> ExecutionResult {
             header_map.insert(name, value);
         }
     }
+
+    // Apply auth
+    apply_auth(&input.auth_config, &mut header_map, &mut url);
 
     let mut request_builder = client.request(method, &url).headers(header_map);
 
@@ -245,6 +255,91 @@ pub async fn execute(input: &ExecuteRequestInput) -> ExecutionResult {
                     total_ms,
                 },
                 error: Some(error_msg),
+            }
+        }
+    }
+}
+
+fn apply_auth(auth_config: &AuthConfig, headers: &mut HeaderMap, url: &mut String) {
+    match auth_config {
+        AuthConfig::None => {}
+        AuthConfig::Bearer { token } => {
+            if let Ok(val) = HeaderValue::from_str(&format!("Bearer {}", token)) {
+                headers.insert(HeaderName::from_static("authorization"), val);
+            }
+        }
+        AuthConfig::Basic { username, password } => {
+            let credentials = base64::engine::general_purpose::STANDARD
+                .encode(format!("{}:{}", username, password));
+            if let Ok(val) = HeaderValue::from_str(&format!("Basic {}", credentials)) {
+                headers.insert(HeaderName::from_static("authorization"), val);
+            }
+        }
+        AuthConfig::ApiKey { key, value, location } => {
+            match location.as_str() {
+                "query" => {
+                    let separator = if url.contains('?') { "&" } else { "?" };
+                    url.push_str(&format!(
+                        "{}{}={}",
+                        separator,
+                        urlencoding_encode(key),
+                        urlencoding_encode(value)
+                    ));
+                }
+                _ => {
+                    // Default to header
+                    if let (Ok(name), Ok(val)) = (
+                        HeaderName::from_bytes(key.as_bytes()),
+                        HeaderValue::from_str(value),
+                    ) {
+                        headers.insert(name, val);
+                    }
+                }
+            }
+        }
+        AuthConfig::OAuth2 { access_token, .. } => {
+            if !access_token.is_empty() {
+                if let Ok(val) = HeaderValue::from_str(&format!("Bearer {}", access_token)) {
+                    headers.insert(HeaderName::from_static("authorization"), val);
+                }
+            }
+        }
+        AuthConfig::OAuth1 {
+            consumer_key,
+            token,
+            ..
+        } => {
+            // Simplified OAuth 1.0 — inject the OAuth header with available tokens
+            // Full signature computation requires request method/URL/params and is complex;
+            // for now we set the token so the server can validate
+            let oauth_header = format!(
+                "OAuth oauth_consumer_key=\"{}\", oauth_token=\"{}\"",
+                urlencoding_encode(consumer_key),
+                urlencoding_encode(token)
+            );
+            if let Ok(val) = HeaderValue::from_str(&oauth_header) {
+                headers.insert(HeaderName::from_static("authorization"), val);
+            }
+        }
+        AuthConfig::Digest { username, password } => {
+            // Digest auth requires a challenge-response flow. For now, we set
+            // Basic as a fallback — proper digest will be implemented with a
+            // two-step request flow in a future iteration
+            let credentials = base64::engine::general_purpose::STANDARD
+                .encode(format!("{}:{}", username, password));
+            if let Ok(val) = HeaderValue::from_str(&format!("Basic {}", credentials)) {
+                headers.insert(HeaderName::from_static("authorization"), val);
+            }
+        }
+        AuthConfig::AwsV4 { access_key, .. } => {
+            // AWS Signature v4 requires signing the entire request (method, URL, headers, body).
+            // Full implementation will use the aws-sigv4 crate in a future iteration.
+            // For now, set the access key as a custom header for visibility
+            if let Ok(val) = HeaderValue::from_str(access_key) {
+                headers.insert(
+                    HeaderName::from_static("x-steq-aws-access-key"),
+                    val,
+                );
             }
         }
     }

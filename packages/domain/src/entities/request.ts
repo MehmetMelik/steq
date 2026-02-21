@@ -1,4 +1,4 @@
-import type { HttpMethod, KeyValue, BodyType } from '../types/http';
+import type { HttpMethod, KeyValue, BodyType, AuthType, AuthConfig, RequestSettings } from '../types/http';
 
 export interface ApiRequest {
   id: string;
@@ -9,6 +9,8 @@ export interface ApiRequest {
   query_params: KeyValue[];
   body_type: BodyType;
   body_content: string | null;
+  auth_type: AuthType;
+  auth_config: AuthConfig;
   collection_id: string | null;
   folder_id: string | null;
   sort_order: number;
@@ -24,6 +26,8 @@ export interface CreateRequestInput {
   query_params: KeyValue[];
   body_type: BodyType;
   body_content: string | null;
+  auth_type: AuthType;
+  auth_config: AuthConfig;
   collection_id: string | null;
   folder_id: string | null;
 }
@@ -37,6 +41,8 @@ export interface UpdateRequestInput {
   query_params?: KeyValue[];
   body_type?: BodyType;
   body_content?: string | null;
+  auth_type?: AuthType;
+  auth_config?: AuthConfig;
   collection_id?: string | null;
   folder_id?: string | null;
   sort_order?: number;
@@ -49,4 +55,7 @@ export interface ExecuteRequestInput {
   query_params: KeyValue[];
   body_type: BodyType;
   body_content: string | null;
+  auth_type: AuthType;
+  auth_config: AuthConfig;
+  settings: RequestSettings;
 }

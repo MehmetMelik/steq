@@ -46,6 +46,9 @@ describe('resolveRequestVariables', () => {
       query_params: [{ key: 'page', value: '{{page}}', enabled: true }],
       body_type: 'json' as const,
       body_content: '{"key": "{{apiKey}}"}',
+      auth_type: 'none' as const,
+      auth_config: { type: 'none' as const },
+      settings: { timeout_ms: 30000, follow_redirects: true, max_redirects: 10 },
     };
 
     const vars: [string, string][] = [
@@ -71,6 +74,9 @@ describe('resolveRequestVariables', () => {
       query_params: [],
       body_type: 'none' as const,
       body_content: null,
+      auth_type: 'none' as const,
+      auth_config: { type: 'none' as const },
+      settings: { timeout_ms: 30000, follow_redirects: true, max_redirects: 10 },
     };
 
     const result = resolveRequestVariables(input, []);
@@ -87,6 +93,9 @@ describe('resolveRequestVariables', () => {
       query_params: [{ key: 'q', value: '{{search}}', enabled: true }],
       body_type: 'none' as const,
       body_content: null,
+      auth_type: 'none' as const,
+      auth_config: { type: 'none' as const },
+      settings: { timeout_ms: 30000, follow_redirects: true, max_redirects: 10 },
     };
 
     const result = resolveRequestVariables(input, [['val', 'resolved']]);

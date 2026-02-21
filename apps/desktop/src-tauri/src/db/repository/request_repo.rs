@@ -1,7 +1,7 @@
 use rusqlite::params;
 
 use crate::db::Database;
-use crate::models::request::{ApiRequest, BodyType, CreateRequestInput, HttpMethod, KeyValue, UpdateRequestInput};
+use crate::models::request::{ApiRequest, AuthConfig, AuthType, BodyType, CreateRequestInput, HttpMethod, KeyValue, UpdateRequestInput};
 
 impl Database {
     pub fn create_request(&self, input: CreateRequestInput) -> Result<ApiRequest, String> {
@@ -11,11 +11,13 @@ impl Database {
             serde_json::to_string(&input.headers).map_err(|e| format!("Serialize headers: {}", e))?;
         let query_json = serde_json::to_string(&input.query_params)
             .map_err(|e| format!("Serialize query_params: {}", e))?;
+        let auth_config_json = serde_json::to_string(&input.auth_config)
+            .map_err(|e| format!("Serialize auth_config: {}", e))?;
 
         self.conn
             .execute(
-                "INSERT INTO requests (id, collection_id, folder_id, name, method, url, headers, query_params, body_type, body_content, sort_order, created_at, updated_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, 0, ?11, ?12)",
+                "INSERT INTO requests (id, collection_id, folder_id, name, method, url, headers, query_params, body_type, body_content, auth_type, auth_config, sort_order, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, 0, ?13, ?14)",
                 params![
                     id,
                     input.collection_id,
@@ -27,6 +29,8 @@ impl Database {
                     query_json,
                     input.body_type.as_str(),
                     input.body_content,
+                    input.auth_type.as_str(),
+                    auth_config_json,
                     now,
                     now,
                 ],
@@ -42,6 +46,8 @@ impl Database {
             query_params: input.query_params,
             body_type: input.body_type,
             body_content: input.body_content,
+            auth_type: input.auth_type,
+            auth_config: input.auth_config,
             collection_id: input.collection_id,
             folder_id: input.folder_id,
             sort_order: 0,
@@ -54,7 +60,7 @@ impl Database {
         let mut stmt = self
             .conn
             .prepare(
-                "SELECT id, collection_id, folder_id, name, method, url, headers, query_params, body_type, body_content, sort_order, created_at, updated_at
+                "SELECT id, collection_id, folder_id, name, method, url, headers, query_params, body_type, body_content, auth_type, auth_config, sort_order, created_at, updated_at
                  FROM requests WHERE id = ?1",
             )
             .map_err(|e| format!("Prepare get_request: {}", e))?;
@@ -89,6 +95,8 @@ impl Database {
         } else {
             existing.body_content
         };
+        let auth_type = input.auth_type.unwrap_or(existing.auth_type);
+        let auth_config = input.auth_config.unwrap_or(existing.auth_config);
         let collection_id = if input.collection_id.is_some() {
             input.collection_id
         } else {
@@ -105,11 +113,13 @@ impl Database {
             serde_json::to_string(&headers).map_err(|e| format!("Serialize headers: {}", e))?;
         let query_json = serde_json::to_string(&query_params)
             .map_err(|e| format!("Serialize query_params: {}", e))?;
+        let auth_config_json = serde_json::to_string(&auth_config)
+            .map_err(|e| format!("Serialize auth_config: {}", e))?;
 
         self.conn
             .execute(
-                "UPDATE requests SET name=?1, method=?2, url=?3, headers=?4, query_params=?5, body_type=?6, body_content=?7, collection_id=?8, folder_id=?9, sort_order=?10, updated_at=?11
-                 WHERE id=?12",
+                "UPDATE requests SET name=?1, method=?2, url=?3, headers=?4, query_params=?5, body_type=?6, body_content=?7, auth_type=?8, auth_config=?9, collection_id=?10, folder_id=?11, sort_order=?12, updated_at=?13
+                 WHERE id=?14",
                 params![
                     name,
                     method.as_str(),
@@ -118,6 +128,8 @@ impl Database {
                     query_json,
                     body_type.as_str(),
                     body_content,
+                    auth_type.as_str(),
+                    auth_config_json,
                     collection_id,
                     folder_id,
                     sort_order,
@@ -136,6 +148,8 @@ impl Database {
             query_params,
             body_type,
             body_content,
+            auth_type,
+            auth_config,
             collection_id,
             folder_id,
             sort_order,
@@ -155,7 +169,7 @@ impl Database {
         let mut stmt = self
             .conn
             .prepare(
-                "SELECT id, collection_id, folder_id, name, method, url, headers, query_params, body_type, body_content, sort_order, created_at, updated_at
+                "SELECT id, collection_id, folder_id, name, method, url, headers, query_params, body_type, body_content, auth_type, auth_config, sort_order, created_at, updated_at
                  FROM requests WHERE collection_id = ?1 ORDER BY sort_order ASC",
             )
             .map_err(|e| format!("Prepare list_requests: {}", e))?;
@@ -179,11 +193,15 @@ impl Database {
         let headers_str: String = row.get(6).map_err(|e| format!("Get headers: {}", e))?;
         let query_str: String = row.get(7).map_err(|e| format!("Get query_params: {}", e))?;
         let body_type_str: String = row.get(8).map_err(|e| format!("Get body_type: {}", e))?;
+        let auth_type_str: String = row.get(10).map_err(|e| format!("Get auth_type: {}", e))?;
+        let auth_config_str: String = row.get(11).map_err(|e| format!("Get auth_config: {}", e))?;
 
         let headers: Vec<KeyValue> =
             serde_json::from_str(&headers_str).map_err(|e| format!("Parse headers: {}", e))?;
         let query_params: Vec<KeyValue> =
             serde_json::from_str(&query_str).map_err(|e| format!("Parse query_params: {}", e))?;
+        let auth_config: AuthConfig =
+            serde_json::from_str(&auth_config_str).map_err(|e| format!("Parse auth_config: {}", e))?;
 
         Ok(ApiRequest {
             id: row.get(0).map_err(|e| format!("Get id: {}", e))?,
@@ -196,9 +214,11 @@ impl Database {
             query_params,
             body_type: BodyType::from_str(&body_type_str),
             body_content: row.get(9).map_err(|e| format!("Get body_content: {}", e))?,
-            sort_order: row.get(10).map_err(|e| format!("Get sort_order: {}", e))?,
-            created_at: row.get(11).map_err(|e| format!("Get created_at: {}", e))?,
-            updated_at: row.get(12).map_err(|e| format!("Get updated_at: {}", e))?,
+            auth_type: AuthType::from_str(&auth_type_str),
+            auth_config,
+            sort_order: row.get(12).map_err(|e| format!("Get sort_order: {}", e))?,
+            created_at: row.get(13).map_err(|e| format!("Get created_at: {}", e))?,
+            updated_at: row.get(14).map_err(|e| format!("Get updated_at: {}", e))?,
         })
     }
 }
@@ -248,6 +268,8 @@ mod tests {
             }],
             body_type: BodyType::None,
             body_content: None,
+            auth_type: AuthType::None,
+            auth_config: AuthConfig::None,
             collection_id: Some(collection_id.to_string()),
             folder_id: None,
         }
@@ -298,6 +320,8 @@ mod tests {
             query_params: None,
             body_type: None,
             body_content: None,
+            auth_type: None,
+            auth_config: None,
             collection_id: None,
             folder_id: None,
             sort_order: None,
@@ -323,6 +347,8 @@ mod tests {
             query_params: None,
             body_type: None,
             body_content: None,
+            auth_type: None,
+            auth_config: None,
             collection_id: None,
             folder_id: None,
             sort_order: None,
@@ -394,6 +420,8 @@ mod tests {
                 query_params: vec![],
                 body_type: bt,
                 body_content: content.clone(),
+                auth_type: AuthType::None,
+                auth_config: AuthConfig::None,
                 collection_id: Some(cid.clone()),
                 folder_id: None,
             };
